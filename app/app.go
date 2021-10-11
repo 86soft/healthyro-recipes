@@ -8,9 +8,11 @@ type Application struct {
 }
 
 type Commands struct {
-	CreateRecipe command.CreateRecipe
-	UpdateRecipe command.UpdateRecipe
-	DeleteRecipe command.DeleteRecipe
+	CreateRecipe             command.CreateRecipe
+	UpdateRecipeTitle        command.UpdateRecipeTitle
+	UpdateRecipeDescription  command.UpdateRecipeDescription
+	UpdateRecipeExternalLink command.UpdateRecipeExternalLink
+	DeleteRecipe             command.DeleteRecipe
 }
 
 type Queries struct {
