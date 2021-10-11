@@ -3,8 +3,8 @@ package command
 import uuid "github.com/satori/go.uuid"
 
 type UpdateRecipeExternalLink struct {
-	id           uuid.UUID
-	externalLink string
+	RecipeUUID   uuid.UUID
+	ExternalLink string
 }
 
 type UpdateRecipeExternalLinkHandler struct {

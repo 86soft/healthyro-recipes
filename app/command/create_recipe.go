@@ -1,9 +1,9 @@
 package command
 
 type CreateRecipe struct {
-	title        string
-	description  string
-	externalLink string
+	Title        string
+	Description  string
+	ExternalLink string
 }
 
 type CreateRecipeHandler struct {

@@ -3,7 +3,7 @@ package command
 import uuid "github.com/satori/go.uuid"
 
 type DeleteRecipe struct {
-	id uuid.UUID
+	RecipeUUID uuid.UUID
 }
 
 type DeleteRecipeHandler struct {
