@@ -1,6 +1,8 @@
 package recipe
 
-import "errors"
+import (
+	"errors"
+)
 
 type Recipe struct {
 	recipeUUID   string
@@ -9,10 +11,19 @@ type Recipe struct {
 	externalLink string
 }
 
-func NewRecipe(recipeUUID string, title string, description string, externalLink string) (*Recipe, error) {
-	if recipeUUID == "" {
-		return nil, errors.New("empty recipeUUID is not allowed")
+func NewRecipe(title string, description string, externalLink string) (*Recipe, error) {
+	if title == "" {
+		return nil, errors.New("empty title is not allowed")
 	}
+	return &Recipe{
+		title:        title,
+		description:  description,
+		externalLink: externalLink,
+	}, nil
+}
+
+// UnmarshalRecipe is used only for unmarshaling Recipe from db
+func UnmarshalRecipe(recipeUUID string, title string, description string, externalLink string) (*Recipe, error) {
 	if title == "" {
 		return nil, errors.New("empty title is not allowed")
 	}

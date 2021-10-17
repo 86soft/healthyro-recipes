@@ -1,6 +1,6 @@
 package command
 
-import uuid "github.com/satori/go.uuid"
+import "github.com/google/uuid"
 
 type DeleteRecipe struct {
 	RecipeUUID uuid.UUID
