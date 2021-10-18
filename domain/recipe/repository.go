@@ -7,6 +7,7 @@ type Repository interface {
 	GetRecipe
 	GetRecipes
 	UpdateRecipe
+	DeleteRecipe
 }
 
 type AddRecipe interface {
@@ -20,4 +21,7 @@ type GetRecipes interface {
 }
 type UpdateRecipe interface {
 	UpdateRecipe(ctx context.Context, r Recipe) error
+}
+type DeleteRecipe interface {
+	DeleteRecipe(ctx context.Context, recipeUUID string) error
 }

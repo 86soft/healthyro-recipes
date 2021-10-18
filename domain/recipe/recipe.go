@@ -22,7 +22,7 @@ func NewRecipe(title string, description string, externalLink string) (*Recipe, 
 	}, nil
 }
 
-// UnmarshalRecipe is used only for unmarshaling Recipe from db
+// UnmarshalRecipe is used only for unmarshalling Recipe from db
 func UnmarshalRecipe(recipeUUID string, title string, description string, externalLink string) (*Recipe, error) {
 	if title == "" {
 		return nil, errors.New("empty title is not allowed")

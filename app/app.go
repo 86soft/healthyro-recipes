@@ -1,6 +1,9 @@
 package app
 
-import "github.com/86soft/healthyro-recipes/app/command"
+import (
+	"github.com/86soft/healthyro-recipes/app/command"
+	"github.com/86soft/healthyro-recipes/app/query"
+)
 
 type Application struct {
 	Commands Commands
@@ -16,4 +19,6 @@ type Commands struct {
 }
 
 type Queries struct {
+	GetRecipeById query.GetRecipeById
+	ListRecipes   query.ListRecipes
 }
