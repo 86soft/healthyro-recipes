@@ -2,7 +2,7 @@ package command
 
 import (
 	"context"
-	"github.com/86soft/healthyro-recipes/domain/recipe"
+	"github.com/86soft/healthyro-recipes/domain"
 )
 
 type CreateRecipe struct {
@@ -11,17 +11,29 @@ type CreateRecipe struct {
 	ExternalLink string
 }
 
-type CreateRecipeHandler struct {
-	repo recipe.AddRecipe
+func NewCreateRecipe(title, description, externalLink string) CreateRecipe {
+	return CreateRecipe{
+		Title:        title,
+		Description:  description,
+		ExternalLink: externalLink,
+	}
 }
 
-func NewCreateRecipeHandler(addRecipe recipe.AddRecipe) CreateRecipeHandler {
+type CreateRecipeHandler struct {
+	repo domain.AddRecipe
+}
+
+func NewCreateRecipeHandler(addRecipe domain.AddRecipe) CreateRecipeHandler {
 	if addRecipe == nil {
 		panic("nil addRecipe inside NewCreateRecipeHandler")
 	}
 	return CreateRecipeHandler{repo: addRecipe}
 }
 
-func (h CreateRecipeHandler) Handle(ctx context.Context, cmd CreateRecipe) (err error) {
-	return h.repo.AddRecipe(ctx, cmd.Title, cmd.Description, cmd.ExternalLink)
+func (h CreateRecipeHandler) Handle(ctx context.Context, cmd CreateRecipe) (recipeID domain.RID, err error) {
+	recipe, err := domain.NewRecipe(cmd.Title, cmd.Description, cmd.ExternalLink)
+	if err != nil {
+		return domain.NilRID, err
+	}
+	return h.repo.AddRecipe(ctx, &recipe)
 }

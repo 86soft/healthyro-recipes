@@ -1,4 +1,4 @@
-package postgresql
+package dao
 
 import (
 	"github.com/google/uuid"
@@ -8,14 +8,14 @@ import (
 
 // Base contains common columns for all tables.
 type Base struct {
-	UUID      uuid.UUID `gorm:"type:uuid;primary_key;"`
+	ID        uuid.UUID `gorm:"type:uuid;primaryKey;"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	DeletedAt *time.Time `sql:"index"`
+	DeletedAt *time.Time `gorm:"index"`
 }
 
 // BeforeCreate will set a UUID rather than numeric ID.
 func (base *Base) BeforeCreate(*gorm.DB) {
-	base.UUID = uuid.New()
+	base.ID = uuid.New()
 	return
 }

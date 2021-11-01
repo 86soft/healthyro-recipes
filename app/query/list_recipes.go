@@ -2,22 +2,22 @@ package query
 
 import (
 	"context"
-	"github.com/86soft/healthyro-recipes/domain/recipe"
+	"github.com/86soft/healthyro-recipes/domain"
 )
 
 type ListRecipes struct {
 }
 type ListRecipesHandler struct {
-	get recipe.GetRecipes
+	get domain.GetRecipes
 }
 
-func NewListRecipesHandler(get recipe.GetRecipes) ListRecipesHandler {
+func NewListRecipesHandler(get domain.GetRecipes) ListRecipesHandler {
 	if get == nil {
 		panic("nil get inside NewListRecipesHandler")
 	}
 	return ListRecipesHandler{get: get}
 }
 
-func (h ListRecipesHandler) Handle(ctx context.Context) ([]recipe.Recipe, error) {
+func (h ListRecipesHandler) Handle(ctx context.Context) ([]domain.Recipe, error) {
 	return h.get.GetRecipes(ctx)
 }

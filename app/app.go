@@ -11,14 +11,14 @@ type Application struct {
 }
 
 type Commands struct {
-	CreateRecipe             command.CreateRecipe
-	UpdateRecipeTitle        command.UpdateRecipeTitle
-	UpdateRecipeDescription  command.UpdateRecipeDescription
-	UpdateRecipeExternalLink command.UpdateRecipeExternalLink
-	DeleteRecipe             command.DeleteRecipe
+	CreateRecipe             command.CreateRecipeHandler
+	UpdateRecipeTitle        command.UpdateRecipeTitleHandler
+	UpdateRecipeDescription  command.UpdateRecipeDescriptionHandler
+	UpdateRecipeExternalLink command.UpdateRecipeExternalLinkHandler
+	DeleteRecipe             command.DeleteRecipeHandler
 }
 
 type Queries struct {
-	GetRecipeById query.GetRecipeById
-	ListRecipes   query.ListRecipes
+	GetRecipeById query.GetRecipeByIdHandler
+	ListRecipes   query.ListRecipesHandler
 }

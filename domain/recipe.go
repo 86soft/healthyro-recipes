@@ -1,21 +1,38 @@
-package recipe
+package domain
 
 import (
 	"errors"
+	"github.com/google/uuid"
 )
 
+type RID struct {
+	id uuid.UUID
+}
+
 type Recipe struct {
-	recipeUUID   string
+	RID
 	title        string
 	description  string
 	externalLink string
 }
 
-func NewRecipe(title string, description string, externalLink string) (*Recipe, error) {
+// NilRecipe is only for returning values on error
+var NilRecipe = Recipe{}
+
+// NilRID is only for returning values on error
+var NilRID = RID{id: uuid.Nil}
+
+func NewRID(id uuid.UUID) RID {
+	return RID{id: id}
+}
+func (rid RID) GetID() uuid.UUID {
+	return rid.id
+}
+func NewRecipe(title string, description string, externalLink string) (Recipe, error) {
 	if title == "" {
-		return nil, errors.New("empty title is not allowed")
+		return NilRecipe, errors.New("empty title is not allowed")
 	}
-	return &Recipe{
+	return Recipe{
 		title:        title,
 		description:  description,
 		externalLink: externalLink,
@@ -23,20 +40,17 @@ func NewRecipe(title string, description string, externalLink string) (*Recipe, 
 }
 
 // UnmarshalRecipe is used only for unmarshalling Recipe from db
-func UnmarshalRecipe(recipeUUID string, title string, description string, externalLink string) (*Recipe, error) {
-	if title == "" {
-		return nil, errors.New("empty title is not allowed")
-	}
-	return &Recipe{
-		recipeUUID:   recipeUUID,
+func UnmarshalRecipe(id RID, title string, description string, externalLink string) Recipe {
+	return Recipe{
+		RID:          id,
 		title:        title,
 		description:  description,
 		externalLink: externalLink,
-	}, nil
+	}
 }
 
 func (r *Recipe) UpdateTitle(title string) error {
-	if len(title) > 100 {
+	if CanUpdateTitle(title) {
 		return errors.New("title to long, maximal limit: 100 chars")
 	}
 	r.title = title
@@ -44,7 +58,7 @@ func (r *Recipe) UpdateTitle(title string) error {
 }
 
 func (r *Recipe) UpdateDescription(description string) error {
-	if len(description) > 5000 {
+	if CanUpdateDescription(description) {
 		return errors.New("description to long, maximal limit: 5000 chars")
 	}
 	r.description = description
@@ -52,15 +66,15 @@ func (r *Recipe) UpdateDescription(description string) error {
 }
 
 func (r *Recipe) UpdateExternalLink(externalLink string) error {
-	if len(externalLink) > 2000 {
+	if !CanUpdateExternalLink(externalLink) {
 		return errors.New("externalLink to long, maximal limit: 2000 chars")
 	}
 	r.externalLink = externalLink
 	return nil
 }
 
-func (r Recipe) RecipeUUID() string {
-	return r.recipeUUID
+func (r Recipe) RecipeID() uuid.UUID {
+	return r.id
 }
 func (r Recipe) Title() string {
 	return r.title

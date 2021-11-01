@@ -2,38 +2,35 @@ package command
 
 import (
 	"context"
-	"github.com/86soft/healthyro-recipes/domain/recipe"
+	"errors"
+	"github.com/86soft/healthyro-recipes/domain"
 )
 
 type UpdateRecipeDescription struct {
-	RecipeUUID  string
+	RecipeID    domain.RID
 	Description string
 }
 
 type UpdateRecipeDescriptionHandler struct {
-	update recipe.UpdateRecipe
-	get    recipe.GetRecipe
+	update domain.UpdateRecipeDescription
 }
 
-func NewUpdateRecipeDescriptionHandler(update recipe.UpdateRecipe, get recipe.GetRecipe) UpdateRecipeDescriptionHandler {
+func NewUpdateRecipeDescription(recipeID domain.RID, description string) UpdateRecipeDescription {
+	return UpdateRecipeDescription{
+		RecipeID:    recipeID,
+		Description: description,
+	}
+}
+func NewUpdateRecipeDescriptionHandler(update domain.UpdateRecipeDescription) UpdateRecipeDescriptionHandler {
 	if update == nil {
 		panic("nil update inside NewUpdateRecipeDescriptionHandler")
 	}
-	if get == nil {
-		panic("nil get inside NewUpdateRecipeDescriptionHandler")
-	}
-
-	return UpdateRecipeDescriptionHandler{update: update, get: get}
+	return UpdateRecipeDescriptionHandler{update: update}
 }
 
 func (h UpdateRecipeDescriptionHandler) Handle(ctx context.Context, cmd UpdateRecipeDescription) error {
-	r, err := h.get.GetRecipe(ctx, cmd.RecipeUUID)
-	if err != nil {
-		return err
+	if !domain.CanUpdateDescription(cmd.Description) {
+		return errors.New("title is too long")
 	}
-	err = r.UpdateDescription(cmd.Description)
-	if err != nil {
-		return err
-	}
-	return h.update.UpdateRecipe(ctx, r)
+	return h.update.UpdateRecipeDescription(ctx, cmd.RecipeID, cmd.Description)
 }

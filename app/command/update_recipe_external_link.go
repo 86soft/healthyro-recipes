@@ -2,20 +2,27 @@ package command
 
 import (
 	"context"
-	"github.com/86soft/healthyro-recipes/domain/recipe"
+	"errors"
+	"github.com/86soft/healthyro-recipes/domain"
 )
 
 type UpdateRecipeExternalLink struct {
-	RecipeUUID   string
+	RecipeID     domain.RID
 	ExternalLink string
 }
 
 type UpdateRecipeExternalLinkHandler struct {
-	update recipe.UpdateRecipe
-	get    recipe.GetRecipe
+	update domain.UpdateRecipeExternalLink
+	get    domain.GetRecipe
 }
 
-func NewUpdateRecipeExternalLinkHandler(update recipe.UpdateRecipe, get recipe.GetRecipe) UpdateRecipeExternalLinkHandler {
+func NewUpdateRecipeExternalLink(recipeID domain.RID, link string) UpdateRecipeExternalLink {
+	return UpdateRecipeExternalLink{
+		RecipeID:     recipeID,
+		ExternalLink: link,
+	}
+}
+func NewUpdateRecipeExternalLinkHandler(update domain.UpdateRecipeExternalLink, get domain.GetRecipe) UpdateRecipeExternalLinkHandler {
 	if update == nil {
 		panic("nil update inside NewUpdateRecipeExternalLinkHandler")
 	}
@@ -27,13 +34,8 @@ func NewUpdateRecipeExternalLinkHandler(update recipe.UpdateRecipe, get recipe.G
 }
 
 func (h UpdateRecipeExternalLinkHandler) Handle(ctx context.Context, cmd UpdateRecipeExternalLink) error {
-	rcp, err := h.get.GetRecipe(ctx, cmd.RecipeUUID)
-	if err != nil {
-		return err
+	if !domain.CanUpdateExternalLink(cmd.ExternalLink) {
+		return errors.New("title is too long")
 	}
-	err = rcp.UpdateExternalLink(cmd.ExternalLink)
-	if err != nil {
-		return err
-	}
-	return h.update.UpdateRecipe(ctx, rcp)
+	return h.update.UpdateRecipeExternalLink(ctx, cmd.RecipeID, cmd.ExternalLink)
 }

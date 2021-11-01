@@ -2,17 +2,17 @@ package query
 
 import (
 	"context"
-	"github.com/86soft/healthyro-recipes/domain/recipe"
+	"github.com/86soft/healthyro-recipes/domain"
 )
 
 type GetRecipeById struct {
-	RecipeUUID string
+	RecipeID domain.RID
 }
 type GetRecipeByIdHandler struct {
-	get recipe.GetRecipe
+	get domain.GetRecipe
 }
 
-func NewGetRecipeByIdHandler(get recipe.GetRecipe) GetRecipeByIdHandler {
+func NewGetRecipeByIdHandler(get domain.GetRecipe) GetRecipeByIdHandler {
 	if get == nil {
 		panic("nil get inside NewGetRecipeByIdHandler")
 	}
@@ -20,6 +20,6 @@ func NewGetRecipeByIdHandler(get recipe.GetRecipe) GetRecipeByIdHandler {
 	return GetRecipeByIdHandler{get: get}
 }
 
-func (h GetRecipeByIdHandler) Handle(ctx context.Context, query GetRecipeById) (recipe.Recipe, error) {
-	return h.get.GetRecipe(ctx, query.RecipeUUID)
+func (h GetRecipeByIdHandler) Handle(ctx context.Context, query GetRecipeById) (domain.Recipe, error) {
+	return h.get.GetRecipe(ctx, query.RecipeID)
 }
