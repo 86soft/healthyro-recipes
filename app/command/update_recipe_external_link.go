@@ -18,7 +18,6 @@ func (u UpdateRecipeExternalLink) GetCommandIDPayload() string {
 
 type UpdateRecipeExternalLinkHandler struct {
 	update domain.UpdateRecipeExternalLink
-	get    domain.GetRecipe
 }
 
 func NewUpdateRecipeExternalLink(recipeID string, link string) UpdateRecipeExternalLink {
@@ -27,15 +26,12 @@ func NewUpdateRecipeExternalLink(recipeID string, link string) UpdateRecipeExter
 		ExternalLink: link,
 	}
 }
-func NewUpdateRecipeExternalLinkHandler(update domain.UpdateRecipeExternalLink, get domain.GetRecipe) UpdateRecipeExternalLinkHandler {
+func NewUpdateRecipeExternalLinkHandler(update domain.UpdateRecipeExternalLink) UpdateRecipeExternalLinkHandler {
 	if update == nil {
 		panic("nil update inside NewUpdateRecipeExternalLinkHandler")
 	}
-	if get == nil {
-		panic("nil get inside NewUpdateRecipeExternalLinkHandler")
-	}
 
-	return UpdateRecipeExternalLinkHandler{update: update, get: get}
+	return UpdateRecipeExternalLinkHandler{update: update}
 }
 
 func (h UpdateRecipeExternalLinkHandler) Handle(ctx context.Context, cmd UpdateRecipeExternalLink) error {

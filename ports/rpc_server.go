@@ -2,8 +2,10 @@ package ports
 
 import (
 	"context"
+	"github.com/86soft/healthyro-recipes/Helpers"
 	"github.com/86soft/healthyro-recipes/app"
 	"github.com/86soft/healthyro-recipes/app/command"
+	"github.com/86soft/healthyro-recipes/app/query"
 	"github.com/86soft/healthyro/common"
 	pb "github.com/86soft/healthyro/recipe"
 	"google.golang.org/grpc/codes"
@@ -12,17 +14,29 @@ import (
 
 type GrpcServer struct {
 	app app.Application
+	pb.UnimplementedRecipeServiceServer
 }
 
 func NewGrpcServer(application app.Application) GrpcServer {
 	return GrpcServer{app: application}
 }
+
 func (s GrpcServer) ListRecipes(ctx context.Context, req *pb.ListRecipesRequest) (*pb.ListRecipesResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListRecipes not implemented")
+	recipes, err := s.app.Queries.ListRecipes.Handle(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "error occurred while querying all recipes")
+	}
+	return &pb.ListRecipesResponse{Recipes: Helpers.MapRecipesToProto(recipes)}, nil
 }
 
 func (s GrpcServer) GetRecipe(ctx context.Context, req *pb.GetRecipeRequest) (*pb.GetRecipeResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetRecipe not implemented")
+	q := query.NewGetRecipeById(req.GetUuid())
+
+	recipe, err := s.app.Queries.GetRecipeById.Handle(ctx, q)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "error occurred while querying new recipe")
+	}
+	return &pb.GetRecipeResponse{Recipe: Helpers.MapRecipeToProto(&recipe)}, nil
 }
 
 func (s GrpcServer) CreateRecipe(ctx context.Context, req *pb.CreateRecipeRequest) (*pb.CreateRecipeResponse, error) {
@@ -30,7 +44,7 @@ func (s GrpcServer) CreateRecipe(ctx context.Context, req *pb.CreateRecipeReques
 
 	id, err := s.app.Commands.CreateRecipe.Handle(ctx, cmd)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "error occured while creating new recipe")
+		return nil, status.Errorf(codes.InvalidArgument, "error occurred while creating new recipe")
 	}
 
 	return &pb.CreateRecipeResponse{Uuid: id.GetID().String()}, nil
@@ -41,7 +55,7 @@ func (s GrpcServer) UpdateRecipeTitle(ctx context.Context, req *pb.UpdateRecipeT
 
 	err := s.app.Commands.UpdateRecipeTitle.Handle(ctx, cmd)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "error occured while updating recipe title")
+		return nil, status.Errorf(codes.Internal, "error occurred while updating recipe title")
 	}
 
 	return &common.Empty{}, nil
@@ -52,7 +66,7 @@ func (s GrpcServer) UpdateRecipeDescription(ctx context.Context, req *pb.UpdateR
 
 	err := s.app.Commands.UpdateRecipeDescription.Handle(ctx, cmd)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "error occured while updating recipe description")
+		return nil, status.Errorf(codes.Internal, "error occurred while updating recipe description")
 	}
 
 	return &common.Empty{}, nil
@@ -63,12 +77,33 @@ func (s GrpcServer) UpdateRecipeExternalLink(ctx context.Context, req *pb.Update
 
 	err := s.app.Commands.UpdateRecipeExternalLink.Handle(ctx, cmd)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "error occured while updating recipe description")
+		return nil, status.Errorf(codes.Internal, "error occurred while updating recipe description")
 	}
 
 	return &common.Empty{}, nil
 }
 
 func (s GrpcServer) DeleteRecipe(ctx context.Context, req *pb.DeleteRecipeRequest) (*common.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DeleteRecipe not implemented")
+	cmd := command.NewDeleteRecipe(req.GetUuid())
+
+	err := s.app.Commands.DeleteRecipe.Handle(ctx, cmd)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "error occurred while deleting recipe")
+	}
+	return &common.Empty{}, nil
 }
+
+/*func RunGRPCServer(registerServer func(server *grpc.Server)) {
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	addr := fmt.Sprintf(":%s", port)
+	RunGRPCServerOnAddr(addr, registerServer)
+}
+
+func RunGRPCServerOnAddr(addr string, registerServer func(server *grpc.Server)) {
+	grpcServer := grpc.NewServer()
+	registerServer(grpcServer)
+	listen, err := net.Listen("tcp", addr)
+}*/

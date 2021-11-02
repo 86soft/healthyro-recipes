@@ -1,9 +1,9 @@
 package domain
 
 import (
+	"errors"
 	"fmt"
-	"github.com/86soft/healthyro-recipes/app/command"
-	"github.com/86soft/healthyro-recipes/app/query"
+	"github.com/86soft/healthyro-recipes/app"
 	"github.com/google/uuid"
 )
 
@@ -14,22 +14,29 @@ type RID struct {
 // NilRID is only for returning values on error
 var NilRID = RID{id: uuid.Nil}
 
-func NewRID(id string) (RID, error) {
-	rid, err := uuid.Parse(id)
+func NewRIDFromString(id string) (RID, error) {
+	newId, err := uuid.Parse(id)
 	if err != nil {
 		return NilRID, fmt.Errorf("invalid uuid: %s", id)
 	}
-	return RID{id: rid}, nil
+	return NewRIDFromUUID(newId)
 }
 
-func NewRIDFromCmd(cmd command.IdentifiableCommand) (RID, error) {
+func NewRIDFromUUID(id uuid.UUID) (RID, error) {
+	if id == uuid.Nil {
+		return NilRID, errors.New("cannot create nil uuid")
+	}
+	return RID{id: id}, nil
+}
+
+func NewRIDFromCmd(cmd app.IdentifiableCommand) (RID, error) {
 	id := cmd.GetCommandIDPayload()
-	return NewRID(id)
+	return NewRIDFromString(id)
 }
 
-func NewRIDFromQuery(q query.IdentifiableQuery) (RID, error) {
+func NewRIDFromQuery(q app.IdentifiableQuery) (RID, error) {
 	id := q.GetQueryIDPayload()
-	return NewRID(id)
+	return NewRIDFromString(id)
 }
 
 func (rid RID) GetID() uuid.UUID {

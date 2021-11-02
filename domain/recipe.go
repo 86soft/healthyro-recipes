@@ -63,12 +63,15 @@ func (r *Recipe) UpdateExternalLink(externalLink string) error {
 func (r Recipe) RecipeID() uuid.UUID {
 	return r.id
 }
+
 func (r Recipe) Title() string {
 	return r.title
 }
+
 func (r Recipe) Description() string {
 	return r.description
 }
+
 func (r Recipe) ExternalLink() string {
 	return r.externalLink
 }

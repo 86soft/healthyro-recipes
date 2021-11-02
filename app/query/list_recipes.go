@@ -7,6 +7,11 @@ import (
 
 type ListRecipes struct {
 }
+
+func NewListRecipes() ListRecipes {
+	return ListRecipes{}
+}
+
 type ListRecipesHandler struct {
 	get domain.GetRecipes
 }

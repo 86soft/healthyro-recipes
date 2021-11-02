@@ -1,26 +1,31 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"github.com/86soft/healthyro-recipes/adapters/dao"
+	"github.com/86soft/healthyro-recipes/app"
+	"github.com/86soft/healthyro-recipes/app/command"
+	"github.com/86soft/healthyro-recipes/app/query"
+	"github.com/86soft/healthyro-recipes/ports"
+	"github.com/86soft/healthyro/recipe"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 	"net/http"
+	"os"
 )
 
 func main() {
-	/*ctx := context.Background()
-	application := app.Application{
-		Commands: app.Commands{
-			CreateRecipe:             command.CreateRecipeHandler{},
-			UpdateRecipeTitle:        command.UpdateRecipeTitleHandler{},
-			UpdateRecipeDescription:  command.UpdateRecipeDescriptionHandler{},
-			UpdateRecipeExternalLink: command.UpdateRecipeExternalLinkHandler{},
-			DeleteRecipe:             command.DeleteRecipeHandler{},
-		},
-		Queries:  app.Queries{},
-	}(ctx)
-	http.HandleFunc("/", HelloServer)
-	http.ListenAndServe(":80", nil)*/
-}
+	ctx := context.Background()
 
-func HelloServer(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Dzialaaaaaaaaaaa")
+	//dsn := os.Getenv("db_conn")
+	dsn := os.Getenv("db_conn")
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		panic("cannot connect to db")
+	}
+
+	app := app.NewApplication(dao.NewRecipeRepository(db))
+	srv := ports.NewGrpcServer(app)
+	recipe.RegisterRecipeServiceServer()
 }

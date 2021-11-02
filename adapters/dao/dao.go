@@ -31,7 +31,8 @@ func MapRecipeToModel(rcp *domain.Recipe) RecipeModel {
 }
 
 func MapModelToRecipe(dao *RecipeModel) domain.Recipe {
-	id := domain.NewRID(dao.ID)
+	// we can ignore error because we can't store nil uuid in db
+	id, _ := domain.NewRIDFromUUID(dao.ID)
 	return domain.UnmarshalRecipe(id, dao.title, dao.description, dao.externalLink)
 
 }

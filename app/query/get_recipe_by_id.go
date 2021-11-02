@@ -13,6 +13,10 @@ func (g GetRecipeById) GetQueryIDPayload() string {
 	return g.RecipeID
 }
 
+func NewGetRecipeById(id string) GetRecipeById {
+	return GetRecipeById{RecipeID: id}
+}
+
 type GetRecipeByIdHandler struct {
 	get domain.GetRecipe
 }
