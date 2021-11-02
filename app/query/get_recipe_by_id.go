@@ -6,8 +6,13 @@ import (
 )
 
 type GetRecipeById struct {
-	RecipeID domain.RID
+	RecipeID string
 }
+
+func (g GetRecipeById) GetQueryIDPayload() string {
+	return g.RecipeID
+}
+
 type GetRecipeByIdHandler struct {
 	get domain.GetRecipe
 }
@@ -21,5 +26,9 @@ func NewGetRecipeByIdHandler(get domain.GetRecipe) GetRecipeByIdHandler {
 }
 
 func (h GetRecipeByIdHandler) Handle(ctx context.Context, query GetRecipeById) (domain.Recipe, error) {
-	return h.get.GetRecipe(ctx, query.RecipeID)
+	rid, err := domain.NewRIDFromQuery(query)
+	if err != nil {
+		return domain.NilRecipe, err
+	}
+	return h.get.GetRecipe(ctx, rid)
 }

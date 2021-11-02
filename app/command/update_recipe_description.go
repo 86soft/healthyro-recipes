@@ -7,15 +7,19 @@ import (
 )
 
 type UpdateRecipeDescription struct {
-	RecipeID    domain.RID
+	RecipeID    string
 	Description string
+}
+
+func (u UpdateRecipeDescription) GetCommandIDPayload() string {
+	return u.RecipeID
 }
 
 type UpdateRecipeDescriptionHandler struct {
 	update domain.UpdateRecipeDescription
 }
 
-func NewUpdateRecipeDescription(recipeID domain.RID, description string) UpdateRecipeDescription {
+func NewUpdateRecipeDescription(recipeID string, description string) UpdateRecipeDescription {
 	return UpdateRecipeDescription{
 		RecipeID:    recipeID,
 		Description: description,
@@ -29,8 +33,13 @@ func NewUpdateRecipeDescriptionHandler(update domain.UpdateRecipeDescription) Up
 }
 
 func (h UpdateRecipeDescriptionHandler) Handle(ctx context.Context, cmd UpdateRecipeDescription) error {
-	if !domain.CanUpdateDescription(cmd.Description) {
-		return errors.New("title is too long")
+	rid, err := domain.NewRIDFromCmd(cmd)
+	if err != nil {
+		return err
 	}
-	return h.update.UpdateRecipeDescription(ctx, cmd.RecipeID, cmd.Description)
+
+	if !domain.CanUpdateDescription(cmd.Description) {
+		return errors.New("description is too long")
+	}
+	return h.update.UpdateRecipeDescription(ctx, rid, cmd.Description)
 }

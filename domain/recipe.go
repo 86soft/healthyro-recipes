@@ -5,10 +5,6 @@ import (
 	"github.com/google/uuid"
 )
 
-type RID struct {
-	id uuid.UUID
-}
-
 type Recipe struct {
 	RID
 	title        string
@@ -19,15 +15,6 @@ type Recipe struct {
 // NilRecipe is only for returning values on error
 var NilRecipe = Recipe{}
 
-// NilRID is only for returning values on error
-var NilRID = RID{id: uuid.Nil}
-
-func NewRID(id uuid.UUID) RID {
-	return RID{id: id}
-}
-func (rid RID) GetID() uuid.UUID {
-	return rid.id
-}
 func NewRecipe(title string, description string, externalLink string) (Recipe, error) {
 	if title == "" {
 		return NilRecipe, errors.New("empty title is not allowed")

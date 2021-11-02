@@ -6,10 +6,14 @@ import (
 )
 
 type DeleteRecipe struct {
-	RecipeID domain.RID
+	RecipeID string
 }
 
-func NewDeleteRecipe(id domain.RID) DeleteRecipe {
+func (d DeleteRecipe) GetCommandIDPayload() string {
+	return d.RecipeID
+}
+
+func NewDeleteRecipe(id string) DeleteRecipe {
 	return DeleteRecipe{RecipeID: id}
 }
 
@@ -24,5 +28,9 @@ func NewDeleteRecipeHandler(delete domain.DeleteRecipe) DeleteRecipeHandler {
 	return DeleteRecipeHandler{delete: delete}
 }
 func (h DeleteRecipeHandler) Handle(ctx context.Context, cmd DeleteRecipe) error {
-	return h.delete.DeleteRecipe(ctx, cmd.RecipeID)
+	rid, err := domain.NewRIDFromCmd(cmd)
+	if err != nil {
+		return err
+	}
+	return h.delete.DeleteRecipe(ctx, rid)
 }

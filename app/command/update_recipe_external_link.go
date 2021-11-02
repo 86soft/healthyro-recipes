@@ -3,12 +3,17 @@ package command
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/86soft/healthyro-recipes/domain"
 )
 
 type UpdateRecipeExternalLink struct {
-	RecipeID     domain.RID
+	RecipeID     string
 	ExternalLink string
+}
+
+func (u UpdateRecipeExternalLink) GetCommandIDPayload() string {
+	return u.RecipeID
 }
 
 type UpdateRecipeExternalLinkHandler struct {
@@ -16,7 +21,7 @@ type UpdateRecipeExternalLinkHandler struct {
 	get    domain.GetRecipe
 }
 
-func NewUpdateRecipeExternalLink(recipeID domain.RID, link string) UpdateRecipeExternalLink {
+func NewUpdateRecipeExternalLink(recipeID string, link string) UpdateRecipeExternalLink {
 	return UpdateRecipeExternalLink{
 		RecipeID:     recipeID,
 		ExternalLink: link,
@@ -34,8 +39,13 @@ func NewUpdateRecipeExternalLinkHandler(update domain.UpdateRecipeExternalLink, 
 }
 
 func (h UpdateRecipeExternalLinkHandler) Handle(ctx context.Context, cmd UpdateRecipeExternalLink) error {
-	if !domain.CanUpdateExternalLink(cmd.ExternalLink) {
-		return errors.New("title is too long")
+	rid, err := domain.NewRIDFromCmd(cmd)
+	if err != nil {
+		return fmt.Errorf("invalid RecipeID uuid: %s", cmd.RecipeID)
 	}
-	return h.update.UpdateRecipeExternalLink(ctx, cmd.RecipeID, cmd.ExternalLink)
+
+	if !domain.CanUpdateExternalLink(cmd.ExternalLink) {
+		return errors.New("external link is too long")
+	}
+	return h.update.UpdateRecipeExternalLink(ctx, rid, cmd.ExternalLink)
 }
