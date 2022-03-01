@@ -15,9 +15,14 @@ type Recipe struct {
 // NilRecipe is only for returning values on error
 var NilRecipe = Recipe{}
 
+var (
+	ErrLengthLimitExceeded = errors.New("length limit exceeded")
+	ErrEmptyTitle          = errors.New("empty title is not allowed")
+)
+
 func NewRecipe(title string, description string, externalLink string) (Recipe, error) {
 	if title == "" {
-		return NilRecipe, errors.New("empty title is not allowed")
+		return NilRecipe, ErrEmptyTitle
 	}
 	return Recipe{
 		title:        title,
@@ -37,41 +42,41 @@ func UnmarshalRecipe(id RID, title string, description string, externalLink stri
 }
 
 func (r *Recipe) UpdateTitle(title string) error {
-	if CanUpdateTitle(title) {
-		return errors.New("title to long, maximal limit: 100 chars")
+	if len(title) > titleLengthLimit {
+		return ErrLengthLimitExceeded
 	}
 	r.title = title
 	return nil
 }
 
 func (r *Recipe) UpdateDescription(description string) error {
-	if CanUpdateDescription(description) {
-		return errors.New("description to long, maximal limit: 5000 chars")
+	if len(description) > descriptionLengthLimit {
+		return ErrLengthLimitExceeded
 	}
 	r.description = description
 	return nil
 }
 
 func (r *Recipe) UpdateExternalLink(externalLink string) error {
-	if !CanUpdateExternalLink(externalLink) {
-		return errors.New("externalLink to long, maximal limit: 2000 chars")
+	if len(externalLink) > externalLinkLengthLimit {
+		return ErrLengthLimitExceeded
 	}
 	r.externalLink = externalLink
 	return nil
 }
 
-func (r Recipe) RecipeID() uuid.UUID {
+func (r *Recipe) RecipeID() uuid.UUID {
 	return r.id
 }
 
-func (r Recipe) Title() string {
+func (r *Recipe) Title() string {
 	return r.title
 }
 
-func (r Recipe) Description() string {
+func (r *Recipe) Description() string {
 	return r.description
 }
 
-func (r Recipe) ExternalLink() string {
+func (r *Recipe) ExternalLink() string {
 	return r.externalLink
 }

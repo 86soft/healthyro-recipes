@@ -14,6 +14,8 @@ type RID struct {
 // NilRID is only for returning values on error
 var NilRID = RID{id: uuid.Nil}
 
+var ErrNilUUID = errors.New("nil uuid")
+
 func NewRIDFromString(id string) (RID, error) {
 	newId, err := uuid.Parse(id)
 	if err != nil {
@@ -24,7 +26,7 @@ func NewRIDFromString(id string) (RID, error) {
 
 func NewRIDFromUUID(id uuid.UUID) (RID, error) {
 	if id == uuid.Nil {
-		return NilRID, errors.New("cannot create nil uuid")
+		return NilRID, ErrNilUUID
 	}
 	return RID{id: id}, nil
 }
