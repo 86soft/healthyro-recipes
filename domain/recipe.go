@@ -2,47 +2,40 @@ package domain
 
 import (
 	"errors"
-	"github.com/google/uuid"
 )
 
 type Recipe struct {
-	RID
-	title        string
-	description  string
-	externalLink string
+	id          RecipeID
+	title       string
+	description string
 }
-
-// NilRecipe is only for returning values on error
-var NilRecipe = Recipe{}
 
 var (
 	ErrLengthLimitExceeded = errors.New("length limit exceeded")
 	ErrEmptyTitle          = errors.New("empty title is not allowed")
 )
 
-func NewRecipe(title string, description string, externalLink string) (Recipe, error) {
+func NewRecipe(title string, description string) (Recipe, error) {
 	if title == "" {
-		return NilRecipe, ErrEmptyTitle
+		return Recipe{}, ErrEmptyTitle
 	}
 	return Recipe{
-		title:        title,
-		description:  description,
-		externalLink: externalLink,
+		title:       title,
+		description: description,
 	}, nil
 }
 
 // UnmarshalRecipe is used only for unmarshalling Recipe from db
-func UnmarshalRecipe(id RID, title string, description string, externalLink string) Recipe {
+func UnmarshalRecipe(id RecipeID, title string, description string) Recipe {
 	return Recipe{
-		RID:          id,
-		title:        title,
-		description:  description,
-		externalLink: externalLink,
+		id:          id,
+		title:       title,
+		description: description,
 	}
 }
 
 func (r *Recipe) UpdateTitle(title string) error {
-	if len(title) > titleLengthLimit {
+	if len(title) > TitleLengthLimit {
 		return ErrLengthLimitExceeded
 	}
 	r.title = title
@@ -50,23 +43,15 @@ func (r *Recipe) UpdateTitle(title string) error {
 }
 
 func (r *Recipe) UpdateDescription(description string) error {
-	if len(description) > descriptionLengthLimit {
+	if len(description) > DescriptionLengthLimit {
 		return ErrLengthLimitExceeded
 	}
 	r.description = description
 	return nil
 }
 
-func (r *Recipe) UpdateExternalLink(externalLink string) error {
-	if len(externalLink) > externalLinkLengthLimit {
-		return ErrLengthLimitExceeded
-	}
-	r.externalLink = externalLink
-	return nil
-}
-
-func (r *Recipe) RecipeID() uuid.UUID {
-	return r.id
+func (r *Recipe) ID() string {
+	return r.id.id
 }
 
 func (r *Recipe) Title() string {
@@ -75,8 +60,4 @@ func (r *Recipe) Title() string {
 
 func (r *Recipe) Description() string {
 	return r.description
-}
-
-func (r *Recipe) ExternalLink() string {
-	return r.externalLink
 }

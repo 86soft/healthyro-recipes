@@ -5,7 +5,7 @@ import (
 )
 
 type Application struct {
-	Commands Commands
+	Commands CommandHandlers
 	Queries  Queries
 }
 

@@ -1,4 +1,4 @@
-package Helpers
+package ports
 
 import (
 	"github.com/86soft/healthyro-recipes/domain"
@@ -14,9 +14,8 @@ func MapRecipesToProto(rs []domain.Recipe) (res []*pb.Recipe) {
 
 func MapRecipeToProto(r *domain.Recipe) *pb.Recipe {
 	return &pb.Recipe{
-		Uuid:         r.RecipeID().String(),
-		Title:        r.Title(),
-		Description:  r.Description(),
-		ExternalLink: r.ExternalLink(),
+		Uuid:        r.ID(),
+		Title:       r.Title(),
+		Description: r.Description(),
 	}
 }

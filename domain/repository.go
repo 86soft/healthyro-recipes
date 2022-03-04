@@ -15,23 +15,23 @@ type Repository interface {
 }
 
 type AddRecipe interface {
-	AddRecipe(ctx context.Context, newRecipe *Recipe) (RID, error)
+	AddRecipe(ctx context.Context, newRecipe *Recipe) (RecipeID, error)
 }
 type GetRecipe interface {
-	GetRecipe(ctx context.Context, recipeID RID) (Recipe, error)
+	GetRecipe(ctx context.Context, recipeID RecipeID) (Recipe, error)
 }
 type GetRecipes interface {
 	GetRecipes(ctx context.Context) ([]Recipe, error)
 }
 type UpdateRecipeTitle interface {
-	UpdateRecipeTitle(ctx context.Context, recipeID RID, title string) error
+	UpdateRecipeTitle(ctx context.Context, recipeID RecipeID, title string) error
 }
 type UpdateRecipeDescription interface {
-	UpdateRecipeDescription(ctx context.Context, recipeID RID, description string) error
+	UpdateRecipeDescription(ctx context.Context, recipeID RecipeID, description string) error
 }
 type UpdateRecipeExternalLink interface {
-	UpdateRecipeExternalLink(ctx context.Context, recipeID RID, link string) error
+	UpdateRecipeExternalLink(ctx context.Context, recipeID RecipeID, link string) error
 }
 type DeleteRecipe interface {
-	DeleteRecipe(ctx context.Context, recipeID RID) error
+	DeleteRecipe(ctx context.Context, recipeID RecipeID) error
 }

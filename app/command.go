@@ -1,28 +1,22 @@
 package app
 
 import (
-	"github.com/86soft/healthyro-recipes/app/command"
+	"github.com/86soft/healthyro-recipes/app/commands"
 	"github.com/86soft/healthyro-recipes/domain"
 )
 
-type IdentifiableCommand interface {
-	GetCommandIDPayload() string
+type CommandHandlers struct {
+	CreateRecipe            commands.CreateRecipeHandler
+	UpdateRecipeTitle       commands.UpdateRecipeTitleHandler
+	UpdateRecipeDescription commands.UpdateRecipeDescriptionHandler
+	DeleteRecipe            commands.DeleteRecipeHandler
 }
 
-type Commands struct {
-	CreateRecipe             command.CreateRecipeHandler
-	UpdateRecipeTitle        command.UpdateRecipeTitleHandler
-	UpdateRecipeDescription  command.UpdateRecipeDescriptionHandler
-	UpdateRecipeExternalLink command.UpdateRecipeExternalLinkHandler
-	DeleteRecipe             command.DeleteRecipeHandler
-}
-
-func NewCommandHandlers(repo domain.Repository) Commands {
-	return Commands{
-		CreateRecipe:             command.NewCreateRecipeHandler(repo),
-		UpdateRecipeTitle:        command.NewUpdateRecipeTitleHandler(repo),
-		UpdateRecipeDescription:  command.NewUpdateRecipeDescriptionHandler(repo),
-		UpdateRecipeExternalLink: command.NewUpdateRecipeExternalLinkHandler(repo),
-		DeleteRecipe:             command.NewDeleteRecipeHandler(repo),
+func NewCommandHandlers(repo domain.Repository) CommandHandlers {
+	return CommandHandlers{
+		CreateRecipe:            commands.NewCreateRecipeHandler(repo),
+		UpdateRecipeTitle:       commands.NewUpdateRecipeTitleHandler(repo),
+		UpdateRecipeDescription: commands.NewUpdateRecipeDescriptionHandler(repo),
+		DeleteRecipe:            commands.NewDeleteRecipeHandler(repo),
 	}
 }
