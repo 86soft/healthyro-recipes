@@ -11,7 +11,7 @@ type CreateRecipe struct {
 }
 
 type CreateRecipeHandler struct {
-	createRecipe func(ctx context.Context, newRecipe *domain.Recipe) (domain.RecipeID, error)
+	createRecipe func(ctx context.Context, newRecipe *domain.Recipe) error
 }
 
 func NewCreateRecipe(title, description string) CreateRecipe {
@@ -21,17 +21,17 @@ func NewCreateRecipe(title, description string) CreateRecipe {
 	}
 }
 
-func NewCreateRecipeHandler(db domain.AddRecipe) CreateRecipeHandler {
+func NewCreateRecipeHandler(db domain.Repository) CreateRecipeHandler {
 	if db == nil {
 		panic("nil db inside NewCreateRecipeHandler")
 	}
 	return CreateRecipeHandler{createRecipe: db.AddRecipe}
 }
 
-func (h *CreateRecipeHandler) Handle(ctx context.Context, cmd CreateRecipe) (recipeID domain.RecipeID, err error) {
+func (h *CreateRecipeHandler) Handle(ctx context.Context, cmd CreateRecipe) error {
 	recipe, err := domain.NewRecipe(cmd.title, cmd.description)
 	if err != nil {
-		return domain.RecipeID{}, err
+		return err
 	}
 	return h.createRecipe(ctx, &recipe)
 }

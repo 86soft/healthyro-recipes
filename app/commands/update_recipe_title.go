@@ -20,7 +20,7 @@ func NewUpdateRecipeTitle(recipeID string, title string) UpdateRecipeTitle {
 		Title:    title,
 	}
 }
-func NewUpdateRecipeTitleHandler(repo domain.UpdateRecipeTitle) UpdateRecipeTitleHandler {
+func NewUpdateRecipeTitleHandler(repo domain.Repository) UpdateRecipeTitleHandler {
 	if repo == nil {
 		panic("nil updateDescriptionFn inside NewUpdateRecipeTitleHandler")
 	}

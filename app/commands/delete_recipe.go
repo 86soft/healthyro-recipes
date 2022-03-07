@@ -17,7 +17,7 @@ func NewDeleteRecipe(id string) DeleteRecipe {
 	return DeleteRecipe{recipeID: id}
 }
 
-func NewDeleteRecipeHandler(repo domain.DeleteRecipe) DeleteRecipeHandler {
+func NewDeleteRecipeHandler(repo domain.Repository) DeleteRecipeHandler {
 	if repo == nil {
 		panic("nil deleteRecipeFn inside NewDeleteRecipeHandler")
 	}

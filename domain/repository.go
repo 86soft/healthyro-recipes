@@ -5,33 +5,12 @@ import (
 )
 
 type Repository interface {
-	AddRecipe
-	GetRecipe
-	GetRecipes
-	UpdateRecipeTitle
-	UpdateRecipeDescription
-	UpdateRecipeExternalLink
-	DeleteRecipe
-}
-
-type AddRecipe interface {
-	AddRecipe(ctx context.Context, newRecipe *Recipe) (RecipeID, error)
-}
-type GetRecipe interface {
-	GetRecipe(ctx context.Context, recipeID RecipeID) (Recipe, error)
-}
-type GetRecipes interface {
+	AddRecipe(ctx context.Context, r *Recipe) error
+	GetRecipe(ctx context.Context, id RecipeID) (Recipe, error)
 	GetRecipes(ctx context.Context) ([]Recipe, error)
-}
-type UpdateRecipeTitle interface {
-	UpdateRecipeTitle(ctx context.Context, recipeID RecipeID, title string) error
-}
-type UpdateRecipeDescription interface {
-	UpdateRecipeDescription(ctx context.Context, recipeID RecipeID, description string) error
-}
-type UpdateRecipeExternalLink interface {
-	UpdateRecipeExternalLink(ctx context.Context, recipeID RecipeID, link string) error
-}
-type DeleteRecipe interface {
-	DeleteRecipe(ctx context.Context, recipeID RecipeID) error
+	UpdateRecipeTitle(ctx context.Context, id RecipeID, title string) error
+	UpdateRecipeDescription(ctx context.Context, id RecipeID, description string) error
+	DeleteRecipe(ctx context.Context, id RecipeID) error
+	AddRecipeResource(ctx context.Context, id RecipeID, r *Resource) error
+	DeleteRecipeResource(ctx context.Context, id RecipeID, name string) error
 }
