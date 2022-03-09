@@ -123,12 +123,29 @@ func (m *MongoStorage) DeleteRecipe(ctx context.Context, id domain.RecipeID) err
 	return nil
 }
 
-func (m *MongoStorage) AddRecipeResource(ctx context.Context, id domain.RecipeID, r *domain.Resource) error {
-	//TODO implement me
-	panic("implement me")
+func (m *MongoStorage) AddRecipeResource(ctx context.Context, id domain.RecipeID, rsc *domain.Resource) error {
+	c := m.client.
+		Database(dbName).
+		Collection(documentRecipes)
+
+	r := resource{
+		name:  rsc.Name(),
+		kind:  rsc.Kind(),
+		value: rsc.Value(),
+	}
+	update := bson.D{{"$push", bson.D{{"resources", r}}}}
+	_, err := c.UpdateByID(ctx, id, update)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (m *MongoStorage) DeleteRecipeResource(ctx context.Context, id domain.RecipeID, name string) error {
-	//TODO implement me
-	panic("implement me")
+	c := m.client.
+		Database(dbName).
+		Collection(documentRecipes)
+	update := bson.M{"$pull": bson.M{"resources": bson.M{"name": name}}}
+	_, err := c.UpdateByID(ctx, id, update)
+	return err
 }

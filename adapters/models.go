@@ -15,7 +15,7 @@ type recipe struct {
 }
 
 type resource struct {
-	name  string `bson:"name,omitempty"`
+	name  string `bson:"name"`
 	kind  string `bson:"kind,omitempty"`
 	value string `bson:"value,omitempty"`
 }
