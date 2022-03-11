@@ -3,92 +3,22 @@ package ports
 import (
 	"context"
 	"github.com/86soft/healthyro-recipes/app"
-	"github.com/86soft/healthyro-recipes/app/commands"
-	"github.com/86soft/healthyro-recipes/app/queries"
-	"github.com/86soft/healthyro/common"
-	pb "github.com/86soft/healthyro/recipe"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	hproto "github.com/86soft/healthyro-recipes/ports/protos"
 )
 
 type RecipeServer struct {
 	app app.Application
-	pb.UnimplementedRecipeServiceServer
+	hproto.UnimplementedRecipeServiceServer
 }
 
 func NewRecipeServer(application app.Application) RecipeServer {
 	return RecipeServer{app: application}
 }
 
-func (s RecipeServer) ListRecipes(ctx context.Context, req *pb.ListRecipesRequest) (*pb.ListRecipesResponse, error) {
-	recipes, err := s.app.Queries.ListRecipes.Handle(ctx)
-	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "error occurred while querying all recipes")
-	}
-	return &pb.ListRecipesResponse{Recipes: MapRecipesToProto(recipes)}, nil
-}
-
-func (s RecipeServer) GetRecipe(ctx context.Context, req *pb.GetRecipeRequest) (*pb.GetRecipeResponse, error) {
-	q := queries.NewGetRecipeById(req.GetUuid())
-
-	recipe, err := s.app.Queries.GetRecipeById.Handle(ctx, q)
-	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "error occurred while querying new recipe")
-	}
-	return &pb.GetRecipeResponse{Recipe: MapRecipeToProto(&recipe)}, nil
-}
-
-func (s RecipeServer) CreateRecipe(ctx context.Context, req *pb.CreateRecipeRequest) (*pb.CreateRecipeResponse, error) {
-	cmd := commands.NewCreateRecipe(req.GetTitle(), req.GetDescription(), req.GetExternalLink())
-	id, err := s.app.Commands.CreateRecipe.Handle(ctx, cmd)
-	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "error occurred while creating new recipe")
-	}
-
-	return &pb.CreateRecipeResponse{Uuid: id.GetID().String()}, nil
-}
-
-func (s RecipeServer) UpdateRecipeTitle(ctx context.Context, req *pb.UpdateRecipeTitleRequest) (*common.Empty, error) {
-	cmd := commands.NewUpdateRecipeTitle(req.GetUuid(), req.GetTitle())
-
-	err := s.app.Commands.UpdateRecipeTitle.Handle(ctx, cmd)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "error occurred while updating recipe title")
-	}
-
-	return &common.Empty{}, nil
-}
-
-func (s RecipeServer) UpdateRecipeDescription(ctx context.Context, req *pb.UpdateRecipeDescriptionRequest) (*common.Empty, error) {
-	cmd := commands.NewUpdateRecipeDescription(req.GetUuid(), req.GetDescription())
-
-	err := s.app.Commands.UpdateRecipeDescription.Handle(ctx, cmd)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "error occurred while updating recipe description")
-	}
-
-	return &common.Empty{}, nil
-}
-
-func (s RecipeServer) UpdateRecipeExternalLink(ctx context.Context, req *pb.UpdateRecipeExternalLinkRequest) (*common.Empty, error) {
-	cmd := commands.NewUpdateRecipeExternalLink(req.GetUuid(), req.GetExternalLink())
-
-	err := s.app.Commands.UpdateRecipeExternalLink.Handle(ctx, cmd)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "error occurred while updating recipe description")
-	}
-
-	return &common.Empty{}, nil
-}
-
-func (s RecipeServer) DeleteRecipe(ctx context.Context, req *pb.DeleteRecipeRequest) (*common.Empty, error) {
-	cmd := commands.NewDeleteRecipe(req.GetUuid())
-
-	err := s.app.Commands.DeleteRecipe.Handle(ctx, cmd)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "error occurred while deleting recipe")
-	}
-	return &common.Empty{}, nil
+func (r RecipeServer) AddRecipe(ctx context.Context, request *hproto.AddRecipeRequest) (*hproto.AddRecipeResponse, error) {
+	/*cmd := commands.NewAddRecipe("test", "kappa")
+	err := r.app.Commands.AddRecipe.Handle(ctx, cmd)*/
+	return &hproto.AddRecipeResponse{}, nil
 }
 
 /*func RunGRPCServer(registerServer func(server *grpc.Server)) {

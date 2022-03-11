@@ -6,7 +6,7 @@ import (
 )
 
 type CommandHandlers struct {
-	CreateRecipe            commands.CreateRecipeHandler
+	AddRecipe               commands.AddRecipeHandler
 	UpdateRecipeTitle       commands.UpdateRecipeTitleHandler
 	UpdateRecipeDescription commands.UpdateRecipeDescriptionHandler
 	DeleteRecipe            commands.DeleteRecipeHandler
@@ -14,7 +14,7 @@ type CommandHandlers struct {
 
 func NewCommandHandlers(repo domain.Repository) CommandHandlers {
 	return CommandHandlers{
-		CreateRecipe:            commands.NewCreateRecipeHandler(repo),
+		AddRecipe:               commands.NewCreateRecipeHandler(repo),
 		UpdateRecipeTitle:       commands.NewUpdateRecipeTitleHandler(repo),
 		UpdateRecipeDescription: commands.NewUpdateRecipeDescriptionHandler(repo),
 		DeleteRecipe:            commands.NewDeleteRecipeHandler(repo),

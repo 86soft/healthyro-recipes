@@ -3,7 +3,6 @@ module github.com/86soft/healthyro-recipes
 go 1.17
 
 require (
-	github.com/86soft/healthyro v0.1.4
 	github.com/google/uuid v1.3.0
 	github.com/rs/zerolog v1.15.0
 	google.golang.org/grpc v1.41.0

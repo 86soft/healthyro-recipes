@@ -15,11 +15,12 @@ var (
 	ErrEmptyTitle          = errors.New("empty title is not allowed")
 )
 
-func NewRecipe(title string, description string) (Recipe, error) {
+func NewRecipe(id RecipeID, title, description string) (Recipe, error) {
 	if title == "" {
 		return Recipe{}, ErrEmptyTitle
 	}
 	return Recipe{
+		id:          id,
 		title:       title,
 		description: description,
 	}, nil

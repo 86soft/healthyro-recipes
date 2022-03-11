@@ -2,6 +2,7 @@ package adapters
 
 import (
 	"context"
+	"fmt"
 	"github.com/86soft/healthyro-recipes/domain"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -18,6 +19,8 @@ type MongoStorage struct {
 	client *mongo.Client
 }
 
+var _ domain.Repository = (*MongoStorage)(nil)
+
 func NewMongoClient(uri string, timeoutInSec time.Duration) (*mongo.Client, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeoutInSec*time.Second)
 	defer cancel()
@@ -29,17 +32,18 @@ func NewMongoStorage(client *mongo.Client) *MongoStorage {
 }
 
 func (m *MongoStorage) AddRecipe(ctx context.Context, r *domain.Recipe) error {
-	dao := recipe{
-		id:          r.ID(),
-		createdAt:   time.Now().UTC(),
-		title:       r.Title(),
-		description: r.Description(),
+	dao := Recipe{
+		Id:          r.ID(),
+		CreatedAt:   time.Now().UTC(),
+		Title:       r.Title(),
+		Description: r.Description(),
 	}
 	c := m.client.
 		Database(dbName).
 		Collection(documentRecipes)
 
-	_, err := c.InsertOne(ctx, dao)
+	res, err := c.InsertOne(ctx, dao)
+	fmt.Println(res)
 	if err != nil {
 		return err
 	}
@@ -50,12 +54,12 @@ func (m *MongoStorage) GetRecipe(ctx context.Context, id domain.RecipeID) (domai
 	c := m.client.
 		Database(dbName).
 		Collection(documentRecipes)
-	dao := recipe{}
+	dao := Recipe{}
 	err := c.FindOne(ctx, bson.D{{"_id", id.GetID()}}).Decode(&dao)
 	if err != nil {
 		return domain.Recipe{}, err
 	}
-	return domain.UnmarshalRecipe(domain.NewRecipeID(dao.id), dao.title, dao.description), nil
+	return domain.UnmarshalRecipe(domain.NewRecipeID(dao.Id), dao.Title, dao.Description), nil
 }
 
 func (m *MongoStorage) GetRecipes(ctx context.Context) ([]domain.Recipe, error) {
@@ -68,13 +72,13 @@ func (m *MongoStorage) GetRecipes(ctx context.Context) ([]domain.Recipe, error) 
 	}
 	var recipes []domain.Recipe
 	for cursor.Next(ctx) {
-		dao := recipe{}
+		dao := Recipe{}
 		err := cursor.Decode(&dao)
 		if err != nil {
 			return nil, err
 		}
 		recipes = append(recipes,
-			domain.UnmarshalRecipe(domain.NewRecipeID(dao.id), dao.title, dao.description))
+			domain.UnmarshalRecipe(domain.NewRecipeID(dao.Id), dao.Title, dao.Description))
 	}
 	return recipes, nil
 }
@@ -128,10 +132,10 @@ func (m *MongoStorage) AddRecipeResource(ctx context.Context, id domain.RecipeID
 		Database(dbName).
 		Collection(documentRecipes)
 
-	r := resource{
-		name:  rsc.Name(),
-		kind:  rsc.Kind(),
-		value: rsc.Value(),
+	r := Resource{
+		Name:  rsc.Name,
+		Kind:  rsc.Kind,
+		Value: rsc.Value,
 	}
 	update := bson.D{{"$push", bson.D{{"resources", r}}}}
 	_, err := c.UpdateByID(ctx, id, update)

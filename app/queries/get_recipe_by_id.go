@@ -17,12 +17,12 @@ type GetRecipeByIdHandler struct {
 	getRecipeFn func(ctx context.Context, recipeID domain.RecipeID) (domain.Recipe, error)
 }
 
-func NewGetRecipeByIdHandler(repo domain.GetRecipe) GetRecipeByIdHandler {
+func NewGetRecipeByIdHandler(repo domain.Repository) (GetRecipeByIdHandler, error) {
 	if repo == nil {
 		panic("nil getRecipeFn inside NewGetRecipeByIdHandler")
 	}
 
-	return GetRecipeByIdHandler{getRecipeFn: repo.GetRecipe}
+	return GetRecipeByIdHandler{getRecipeFn: repo.GetRecipe}, nil
 }
 
 func (h GetRecipeByIdHandler) Handle(ctx context.Context, query GetRecipeById) (domain.Recipe, error) {

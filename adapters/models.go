@@ -4,18 +4,18 @@ import (
 	"time"
 )
 
-type recipe struct {
-	id          string     `bson:"_id"`
-	createdAt   time.Time  `bson:"created_at"`
-	updatedAt   time.Time  `bson:"updated_at,omitempty"`
-	deletedAt   time.Time  `bson:"deleted_at,omitempty"`
-	title       string     `bson:"title,omitempty"`
-	description string     `bson:"description,omitempty"`
-	resources   []resource `bson:"resources,omitempty"`
+type Recipe struct {
+	Id          string     `bson:"_id"`
+	CreatedAt   time.Time  `bson:"created_at"`
+	UpdatedAt   time.Time  `bson:"updated_at,omitempty"`
+	DeletedAt   time.Time  `bson:"deleted_at,omitempty"`
+	Title       string     `bson:"title,omitempty"`
+	Description string     `bson:"description,omitempty"`
+	Resources   []Resource `bson:"resources,omitempty"`
 }
 
-type resource struct {
-	name  string `bson:"name"`
-	kind  string `bson:"kind,omitempty"`
-	value string `bson:"value,omitempty"`
+type Resource struct {
+	Name  string `bson:"name"`
+	Kind  string `bson:"kind,omitempty"`
+	Value string `bson:"value,omitempty"`
 }

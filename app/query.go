@@ -11,8 +11,9 @@ type Queries struct {
 }
 
 func NewQueryHandlers(repo domain.Repository) Queries {
+	t, _ := queries.NewGetRecipeByIdHandler(repo)
 	return Queries{
-		GetRecipeById: queries.NewGetRecipeByIdHandler(repo),
+		GetRecipeById: t,
 		ListRecipes:   queries.NewListRecipesHandler(repo),
 	}
 }

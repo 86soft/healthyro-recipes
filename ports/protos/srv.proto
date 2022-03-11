@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package healthyro.recipe;
+
+//import "recipe/recipe_msg.proto";
+
+//import "common/empty.proto";
+
+option go_package = "github.com/86soft/healthyro-recipes;hproto";
+
+service RecipeService {
+  rpc AddRecipe(AddRecipeRequest) returns (AddRecipeResponse) {}
+}
+
+message AddRecipeRequest {
+
+}
+
+message AddRecipeResponse{
+
+}
