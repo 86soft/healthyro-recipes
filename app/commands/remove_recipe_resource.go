@@ -36,7 +36,7 @@ func NewRemoveRecipeResource(name, kind, value string) RemoveRecipeResource {
 }
 
 func (h *RemoveRecipeResourceHandler) Handle(ctx context.Context, cmd AddRecipe) error {
-	recipe, err := domain.NewRecipe(cmd.title, cmd.description)
+	recipe, err := domain.NewRecipe(cmd.Title, cmd.Description)
 	if err != nil {
 		return err
 	}

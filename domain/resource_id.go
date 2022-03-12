@@ -1,9 +1,9 @@
 package domain
 
 type ResourceID struct {
-	id string
+	Id string
 }
 
 func (i ResourceID) GetID() string {
-	return i.id
+	return i.Id
 }

@@ -12,8 +12,10 @@ import (
 	"github.com/rs/zerolog"
 	"go.mongodb.org/mongo-driver/mongo"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 	"net"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -38,22 +40,36 @@ func (s *Service) Run() error {
 	return s.grpcServer.Serve(lis)
 }
 
-func Setup(logger zerolog.Logger) (*Service, error) {
-	svc := Service{log: logger}
-	svc.mongoDbUrl = os.Getenv("MONGO_URL")
-	svc.grpcPort = os.Getenv("PORT")
-
+func setup() (*Service, error) {
+	// TODO: once the is a stable mvp, refactor this so it is not that ugly
+	svc := createDefaultSvc()
 	local := flag.Bool("local", false,
 		"determines if service is running locally, if so it needs passed arguments")
+
 	customConn := flag.String("conn", "", "mongo database connection string")
 	customGrpcPort := flag.String("grpcPort", "", "grpc server port")
 
 	flag.Parse()
 
+	svc.log = zerolog.New(os.Stdout)
 	if *local {
 		svc.mongoDbUrl = *customConn
 		svc.grpcPort = *customGrpcPort
+
+		output := zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: time.RFC3339}
+		output.FormatLevel = func(i interface{}) string {
+			return strings.ToUpper(fmt.Sprintf("|%-6s|", i))
+		}
+		output.FormatFieldName = func(i interface{}) string {
+			return fmt.Sprintf("%s:", i)
+		}
+		output.FormatFieldValue = func(i interface{}) string {
+			return strings.ToUpper(fmt.Sprintf("%s", i))
+		}
+
+		svc.log = zerolog.New(output).With().Timestamp().Logger()
 	}
+
 	if svc.mongoDbUrl == "" {
 		return nil, errors.New("mongo connection string is missing")
 	}
@@ -68,13 +84,28 @@ func Setup(logger zerolog.Logger) (*Service, error) {
 	}
 
 	store := adapters.NewMongoStorage(svc.dbClient)
-	newApp := app.NewApplication(store)
+	newApp, err := app.NewApplication(store, svc.log)
+	if err != nil {
+		svc.log.Err(err)
+		return nil, err
+	}
 	server := ports.NewRecipeServer(newApp)
 	svc.grpcServer = grpc.NewServer()
 
-	hproto.RegisterRecipeServiceServer(svc.grpcServer, server)
-
+	reflection.Register(svc.grpcServer)
+	hproto.RegisterRecipeServer(svc.grpcServer, server)
+	mongoInfi := fmt.Sprintf("mongo connection: %s", svc.mongoDbUrl)
+	grpcInfo := fmt.Sprintf("grpc listening on port: %s", svc.grpcPort)
+	svc.log.Info().Msg(mongoInfi)
+	svc.log.Info().Msg(grpcInfo)
 	return &svc, nil
+}
+
+func createDefaultSvc() Service {
+	svc := Service{}
+	svc.mongoDbUrl = os.Getenv("MONGO_URL")
+	svc.grpcPort = os.Getenv("PORT")
+	return svc
 }
 
 func (s *Service) Clear() error {

@@ -1,25 +1,28 @@
 package main
 
 import (
-	"github.com/rs/zerolog"
+	"log"
 	"os"
 )
 
 func main() {
-	log := zerolog.New(os.Stderr)
-	svc, err := Setup(log)
+	err := Start()
 	if err != nil {
-		log.Error().Msg(err.Error())
-		os.Exit(1)
-	}
-
-	if err = svc.Run(); err != nil {
-		log.Error().Msg(err.Error())
-		os.Exit(1)
-	}
-	if err = svc.Clear(); err != nil {
-		log.Error().Msg(err.Error())
-		os.Exit(1)
+		log.Fatal(err)
 	}
 	os.Exit(0)
+}
+
+func Start() error {
+	svc, err := setup()
+	if err != nil {
+		return err
+	}
+	if err = svc.Run(); err != nil {
+		return err
+	}
+	if err = svc.Clear(); err != nil {
+		return err
+	}
+	return nil
 }

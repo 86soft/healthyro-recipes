@@ -4,36 +4,69 @@ import (
 	"context"
 	"github.com/86soft/healthyro-recipes/domain"
 	uuid "github.com/google/uuid"
+	"github.com/rs/zerolog"
 )
 
 type AddRecipe struct {
-	title       string
-	description string
+	Title       string
+	Description string
+	Resources   []RecipeResources
+	Tags        []string
+}
+
+type RecipeResources struct {
+	Name  string
+	Kind  string
+	Value string
 }
 
 type AddRecipeHandler struct {
 	addRecipeFn func(ctx context.Context, newRecipe *domain.Recipe) error
+	log         zerolog.Logger
 }
 
-func NewAddRecipe(title, description string) AddRecipe {
-	return AddRecipe{
-		title:       title,
-		description: description,
-	}
-}
-
-func NewCreateRecipeHandler(db domain.Repository) AddRecipeHandler {
+func NewAddRecipeHandler(db domain.Repository, logger zerolog.Logger) (AddRecipeHandler, error) {
 	if db == nil {
-		panic("nil db inside NewCreateRecipeHandler")
+		return AddRecipeHandler{}, &NilDependencyError{
+			name: "NewAddRecipeHandler - db",
+		}
 	}
-	return AddRecipeHandler{addRecipeFn: db.AddRecipe}
+	return AddRecipeHandler{
+		addRecipeFn: db.AddRecipe,
+		log:         logger,
+	}, nil
 }
 
-func (h *AddRecipeHandler) Handle(ctx context.Context, cmd AddRecipe) error {
+func (h *AddRecipeHandler) Handle(ctx context.Context, cmd AddRecipe) (domain.RecipeID, error) {
 	id := domain.NewRecipeID(uuid.New().String())
-	recipe, err := domain.NewRecipe(id, cmd.title, cmd.description)
-	if err != nil {
-		return err
+	resources := make([]domain.Resource, 0, len(cmd.Resources))
+	for _, r := range cmd.Resources {
+		resources = append(resources, domain.Resource{
+			Id:    domain.ResourceID{Id: uuid.New().String()},
+			Name:  r.Name,
+			Kind:  r.Kind,
+			Value: r.Value,
+		})
 	}
-	return h.addRecipeFn(ctx, &recipe)
+
+	tags := make([]domain.Tag, 0, len(cmd.Tags))
+	for _, t := range cmd.Resources {
+		tags = append(tags, domain.Tag{
+			Id:   domain.NewTagID(uuid.New().String()),
+			Name: t.Name,
+		})
+	}
+
+	recipe := domain.Recipe{
+		Id:          id,
+		Title:       cmd.Title,
+		Description: cmd.Description,
+		Resources:   resources,
+		Tags:        tags,
+	}
+	err := h.addRecipeFn(ctx, &recipe)
+	if err != nil {
+		return domain.RecipeID{}, err
+	}
+	return id, nil
 }

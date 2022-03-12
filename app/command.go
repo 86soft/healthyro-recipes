@@ -3,6 +3,7 @@ package app
 import (
 	"github.com/86soft/healthyro-recipes/app/commands"
 	"github.com/86soft/healthyro-recipes/domain"
+	"github.com/rs/zerolog"
 )
 
 type CommandHandlers struct {
@@ -12,11 +13,20 @@ type CommandHandlers struct {
 	DeleteRecipe            commands.DeleteRecipeHandler
 }
 
-func NewCommandHandlers(repo domain.Repository) CommandHandlers {
-	return CommandHandlers{
-		AddRecipe:               commands.NewCreateRecipeHandler(repo),
-		UpdateRecipeTitle:       commands.NewUpdateRecipeTitleHandler(repo),
-		UpdateRecipeDescription: commands.NewUpdateRecipeDescriptionHandler(repo),
-		DeleteRecipe:            commands.NewDeleteRecipeHandler(repo),
+func NewCommandHandlers(repo domain.Repository, logger zerolog.Logger) (CommandHandlers, error) {
+	arh, err := commands.NewAddRecipeHandler(repo, logger)
+	if err != nil {
+		return CommandHandlers{}, err
 	}
+	//crh, err := commands.NewUpdateRecipeTitleHandler(repo, logger)
+	if err != nil {
+		return CommandHandlers{}, err
+	}
+
+	return CommandHandlers{
+		AddRecipe: arh,
+		//UpdateRecipeTitle:       commands.NewUpdateRecipeTitleHandler(repo),
+		//UpdateRecipeDescription: commands.NewUpdateRecipeDescriptionHandler(repo),
+		//DeleteRecipe:            commands.NewDeleteRecipeHandler(repo),
+	}, nil
 }

@@ -4,18 +4,36 @@ import (
 	"time"
 )
 
+type Document struct {
+	CreatedAt time.Time `bson:"createdAt"`
+	UpdatedAt time.Time `bson:"updatedAt,omitempty"`
+	DeletedAt time.Time `bson:"deletedAt,omitempty"`
+}
+
 type Recipe struct {
-	Id          string     `bson:"_id"`
-	CreatedAt   time.Time  `bson:"created_at"`
-	UpdatedAt   time.Time  `bson:"updated_at,omitempty"`
-	DeletedAt   time.Time  `bson:"deleted_at,omitempty"`
-	Title       string     `bson:"title,omitempty"`
-	Description string     `bson:"description,omitempty"`
-	Resources   []Resource `bson:"resources,omitempty"`
+	Document    `bson:",inline"`
+	Id          string      `bson:"_id"`
+	Title       string      `bson:"title"`
+	Description string      `bson:"description,omitempty"`
+	Resources   []Resource  `bson:"resources,omitempty"`
+	Tags        []RecipeTag `bson:"tags,omitempty"`
+}
+type RecipeTag struct {
+	Id   string `bson:"_id"`
+	name string
 }
 
 type Resource struct {
-	Name  string `bson:"name"`
-	Kind  string `bson:"kind,omitempty"`
-	Value string `bson:"value,omitempty"`
+	Document `bson:",inline"`
+	Id       string `bson:"_id"`
+	Name     string
+	Kind     string `bson:"kind,omitempty"`
+	Value    string `bson:"value,omitempty"`
+}
+
+type Tag struct {
+	Document  `bson:",inline"`
+	ID        string   `bson:"_id"`
+	Name      string   `bson:"name"`
+	RecipeIDS []string `bson:"recipeIds"`
 }

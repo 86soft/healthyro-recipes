@@ -3,6 +3,7 @@ package app
 import (
 	"github.com/86soft/healthyro-recipes/app/queries"
 	"github.com/86soft/healthyro-recipes/domain"
+	"github.com/rs/zerolog"
 )
 
 type Queries struct {
@@ -10,10 +11,7 @@ type Queries struct {
 	ListRecipes   queries.ListRecipesHandler
 }
 
-func NewQueryHandlers(repo domain.Repository) Queries {
-	t, _ := queries.NewGetRecipeByIdHandler(repo)
-	return Queries{
-		GetRecipeById: t,
-		ListRecipes:   queries.NewListRecipesHandler(repo),
-	}
+func NewQueryHandlers(repo domain.Repository, logger zerolog.Logger) (Queries, error) {
+	// t, _ := queries.NewGetRecipeByIdHandler(repo)
+	return Queries{}, nil
 }
