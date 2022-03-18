@@ -16,7 +16,7 @@ type ListRecipesHandler struct {
 	getRecipesFn func(ctx context.Context) ([]domain.Recipe, error)
 }
 
-func NewListRecipesHandler(repo domain.Repository) ListRecipesHandler {
+func NewListRecipesHandler(repo domain.Store) ListRecipesHandler {
 	if repo == nil {
 		panic("nil getRecipeFn inside NewListRecipesHandler")
 	}

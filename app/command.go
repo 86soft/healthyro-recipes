@@ -13,7 +13,7 @@ type CommandHandlers struct {
 	DeleteRecipe            commands.DeleteRecipeHandler
 }
 
-func NewCommandHandlers(repo domain.Repository, logger zerolog.Logger) (CommandHandlers, error) {
+func NewCommandHandlers(repo domain.Store, logger zerolog.Logger) (CommandHandlers, error) {
 	arh, err := commands.NewAddRecipeHandler(repo, logger)
 	if err != nil {
 		return CommandHandlers{}, err

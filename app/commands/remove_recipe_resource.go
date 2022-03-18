@@ -26,11 +26,11 @@ func NewRemoveRecipeResource(name, kind, value string) RemoveRecipeResource {
 /*func NewRemoveRecipeResourceHandler(
 	fn func(
 		ctx context.Context,
-		id domain.RecipeID,
-		name string) error,
+		ID domain.RecipeID,
+		Name string) error,
 ) (RemoveRecipeResourceHandler, error) {
 	if fn == nil {
-		return RemoveRecipeResourceHandler{}, &NilDependencyError{name: "RemoveRecipeResourceHandler"}
+		return RemoveRecipeResourceHandler{}, &NilDependencyError{Name: "RemoveRecipeResourceHandler"}
 	}
 	return RemoveRecipeResourceHandler{removeRecipeResource: fn}, nil
 }

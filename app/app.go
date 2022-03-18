@@ -12,7 +12,7 @@ type Application struct {
 	Log      zerolog.Logger
 }
 
-func NewApplication(repo domain.Repository, logger zerolog.Logger) (Application, error) {
+func NewApplication(repo domain.Store, logger zerolog.Logger) (Application, error) {
 	c, err := NewCommandHandlers(repo, logger)
 	if err != nil {
 		return Application{}, fmt.Errorf("NewApplication: %w", err)

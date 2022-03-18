@@ -4,6 +4,7 @@ option go_package = "github.com/86soft/healthyro-recipes;hproto";
 
 service Recipe {
   rpc AddRecipe(AddRecipeRequest) returns (AddRecipeResponse) {}
+  rpc UpdateRecipeTitle(UpdateRecipeTitleRequest) returns (UpdateRecipeTitleResponse) {}
 }
 
 message AddRecipeRequest {

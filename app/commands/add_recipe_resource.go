@@ -2,6 +2,7 @@ package commands
 
 import (
 	"context"
+	"github.com/86soft/healthyro-recipes/app"
 	"github.com/86soft/healthyro-recipes/domain"
 )
 
@@ -30,17 +31,17 @@ func NewAddRecipeResourceHandler(fn func(
 	r *domain.Resource,
 ) error) (AddRecipeResourceHandler, error) {
 	if fn == nil {
-		return AddRecipeResourceHandler{}, &NilDependencyError{name: "AddRecipeResourceHandler"}
+		return AddRecipeResourceHandler{}, &app.NilDependencyError{Name: "AddRecipeResourceHandler"}
 	}
 	return AddRecipeResourceHandler{addRecipeResource: fn}, nil
 }
 
 func (h *AddRecipeResourceHandler) Handle(ctx context.Context, cmd AddRecipeResource) error {
 	/*r := domain.Resource{
-		Name:  cmd.name,
+		Name:  cmd.Name,
 		Kind:  cmd.kind,
 		Value: cmd.value,
 	}*/
-	//return h.addRecipeResource(ctx, cmd.id, &r)
+	//return h.addRecipeResource(ctx, cmd.ID, &r)
 	return nil
 }

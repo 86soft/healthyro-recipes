@@ -11,7 +11,7 @@ type Queries struct {
 	ListRecipes   queries.ListRecipesHandler
 }
 
-func NewQueryHandlers(repo domain.Repository, logger zerolog.Logger) (Queries, error) {
+func NewQueryHandlers(repo domain.Store, logger zerolog.Logger) (Queries, error) {
 	// t, _ := queries.NewGetRecipeByIdHandler(repo)
 	return Queries{}, nil
 }

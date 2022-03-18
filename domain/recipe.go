@@ -5,7 +5,7 @@ import (
 )
 
 type Recipe struct {
-	Id          RecipeID
+	ID[Recipe]
 	Title       string
 	Description string
 	Resources   []Resource

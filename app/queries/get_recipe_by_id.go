@@ -17,7 +17,7 @@ type GetRecipeByIdHandler struct {
 	getRecipeFn func(ctx context.Context, recipeID domain.RecipeID) (domain.Recipe, error)
 }
 
-func NewGetRecipeByIdHandler(repo domain.Repository) (GetRecipeByIdHandler, error) {
+func NewGetRecipeByIdHandler(repo domain.Store) (GetRecipeByIdHandler, error) {
 	if repo == nil {
 		panic("nil getRecipeFn inside NewGetRecipeByIdHandler")
 	}

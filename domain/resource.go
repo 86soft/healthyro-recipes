@@ -1,7 +1,7 @@
 package domain
 
 type Resource struct {
-	Id    ResourceID
+	ID    ID[Resource]
 	Name  string
 	Kind  string
 	Value string

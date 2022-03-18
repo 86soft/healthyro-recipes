@@ -2,7 +2,8 @@ package commands
 
 import (
 	"context"
-	"github.com/86soft/healthyro-recipes/domain"
+	"github.com/86soft/healthyro-recipes/app"
+	d "github.com/86soft/healthyro-recipes/domain"
 	uuid "github.com/google/uuid"
 	"github.com/rs/zerolog"
 )
@@ -21,14 +22,14 @@ type RecipeResources struct {
 }
 
 type AddRecipeHandler struct {
-	addRecipeFn func(ctx context.Context, newRecipe *domain.Recipe) error
+	addRecipeFn func(ctx context.Context, newRecipe *d.Recipe) error
 	log         zerolog.Logger
 }
 
-func NewAddRecipeHandler(db domain.Repository, logger zerolog.Logger) (AddRecipeHandler, error) {
+func NewAddRecipeHandler(db d.Store, logger zerolog.Logger) (AddRecipeHandler, error) {
 	if db == nil {
-		return AddRecipeHandler{}, &NilDependencyError{
-			name: "NewAddRecipeHandler - db",
+		return AddRecipeHandler{}, &app.NilDependencyError{
+			Name: "NewAddRecipeHandler - db",
 		}
 	}
 	return AddRecipeHandler{
@@ -37,28 +38,15 @@ func NewAddRecipeHandler(db domain.Repository, logger zerolog.Logger) (AddRecipe
 	}, nil
 }
 
-func (h *AddRecipeHandler) Handle(ctx context.Context, cmd AddRecipe) (domain.RecipeID, error) {
-	id := domain.NewRecipeID(uuid.New().String())
-	resources := make([]domain.Resource, 0, len(cmd.Resources))
-	for _, r := range cmd.Resources {
-		resources = append(resources, domain.Resource{
-			Id:    domain.ResourceID{Id: uuid.New().String()},
-			Name:  r.Name,
-			Kind:  r.Kind,
-			Value: r.Value,
-		})
-	}
+func (h *AddRecipeHandler) Handle(ctx context.Context, cmd AddRecipe) (d.ID[d.Recipe], error) {
+	resources := make([]d.Resource, 0, len(cmd.Resources))
+	cmd.mapResources(resources)
 
-	tags := make([]domain.Tag, 0, len(cmd.Tags))
-	for _, t := range cmd.Resources {
-		tags = append(tags, domain.Tag{
-			Id:   domain.NewTagID(uuid.New().String()),
-			Name: t.Name,
-		})
-	}
+	tags := make([]d.Tag, 0, len(cmd.Tags))
+	cmd.mapTags(tags)
 
-	recipe := domain.Recipe{
-		Id:          id,
+	recipe := d.Recipe{
+		ID:          d.ID[d.Recipe]{ID: uuid.New().String()},
 		Title:       cmd.Title,
 		Description: cmd.Description,
 		Resources:   resources,
@@ -66,7 +54,27 @@ func (h *AddRecipeHandler) Handle(ctx context.Context, cmd AddRecipe) (domain.Re
 	}
 	err := h.addRecipeFn(ctx, &recipe)
 	if err != nil {
-		return domain.RecipeID{}, err
+		return d.ID[d.Recipe]{}, err
 	}
-	return id, nil
+	return recipe.ID, nil
+}
+
+func (c *AddRecipe) mapResources(res []d.Resource) {
+	for _, r := range res {
+		res = append(res, d.Resource{
+			ID:    d.CreateID[d.Resource](),
+			Name:  r.Name,
+			Kind:  r.Kind,
+			Value: r.Value,
+		})
+	}
+}
+
+func (c *AddRecipe) mapTags(tags []d.Tag) {
+	for _, t := range c.Tags {
+		tags = append(tags, d.Tag{
+			ID:   d.CreateID[d.Tag](),
+			Name: t,
+		})
+	}
 }
