@@ -33,3 +33,18 @@ func (m *MongoStorage) AddRecipeTag(ctx context.Context, id d.ID[Recipe], t *Tag
 	})
 	return errOrNil
 }
+
+func (m *MongoStorage) DeleteRecipeTag(ctx context.Context, recipeID d.ID[Recipe], tagID d.ID[Tag]) error {
+	recipeColl := m.ForCollection(CollectionRecipes)
+
+	removeTagFromRecipe := bson.M{"$pull": bson.M{"tags": bson.M{"_id": tagID.ID}}}
+	_, errOrNil := recipeColl.UpdateByID(ctx, recipeID.ID, removeTagFromRecipe)
+	if errOrNil != nil {
+		return errOrNil
+	}
+
+	tagsColl := m.ForCollection(CollectionRecipes)
+	removeRecipeID := bson.M{"$pull": bson.M{"recipeIds": recipeID.ID}}
+	_, errOrNil = tagsColl.UpdateByID(ctx, tagID.ID, removeRecipeID)
+	return errOrNil
+}
