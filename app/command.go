@@ -7,14 +7,14 @@ import (
 )
 
 type CommandHandlers struct {
-	AddRecipe               commands.AddRecipeHandler
+	AddRecipe               commands.CreateRecipeHandler
 	UpdateRecipeTitle       commands.UpdateRecipeTitleHandler
 	UpdateRecipeDescription commands.UpdateRecipeDescriptionHandler
 	DeleteRecipe            commands.DeleteRecipeHandler
 }
 
 func NewCommandHandlers(repo core.Store, logger zerolog.Logger) (CommandHandlers, error) {
-	arh, err := commands.NewAddRecipeHandler(repo, logger)
+	arh, err := commands.NewCreateRecipeHandler(repo, logger)
 	if err != nil {
 		return CommandHandlers{}, err
 	}

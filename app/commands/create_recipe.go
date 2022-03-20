@@ -6,7 +6,7 @@ import (
 	"github.com/rs/zerolog"
 )
 
-type AddRecipe struct {
+type CreateRecipe struct {
 	Title       string
 	Description string
 	Resources   []RecipeResources
@@ -19,27 +19,27 @@ type RecipeResources struct {
 	Value string
 }
 
-type AddRecipeHandler struct {
-	addRecipeFn func(ctx context.Context, newRecipe *d.Recipe) error
-	log         zerolog.Logger
+type CreateRecipeHandler struct {
+	createRecipeFn func(ctx context.Context, newRecipe *d.Recipe) error
+	log            zerolog.Logger
 }
 
-func NewAddRecipeHandler(
+func NewCreateRecipeHandler(
 	fn func(ctx context.Context, r *d.Recipe) error,
 	logger zerolog.Logger,
-) (AddRecipeHandler, error) {
+) (CreateRecipeHandler, error) {
 	if fn == nil {
-		return AddRecipeHandler{}, &d.NilDependencyError{
-			Name: "NewAddRecipeHandler - fn",
+		return CreateRecipeHandler{}, &d.NilDependencyError{
+			Name: "NewCreateRecipeHandler - fn",
 		}
 	}
-	return AddRecipeHandler{
-		addRecipeFn: fn,
-		log:         logger,
+	return CreateRecipeHandler{
+		createRecipeFn: fn,
+		log:            logger,
 	}, nil
 }
 
-func (h *AddRecipeHandler) Handle(ctx context.Context, cmd AddRecipe) (d.ID[d.Recipe], error) {
+func (h *CreateRecipeHandler) Handle(ctx context.Context, cmd CreateRecipe) (d.ID[d.Recipe], error) {
 	resources := make([]d.Resource, 0, len(cmd.Resources))
 	cmd.mapResources(resources)
 
@@ -53,14 +53,14 @@ func (h *AddRecipeHandler) Handle(ctx context.Context, cmd AddRecipe) (d.ID[d.Re
 		Resources:   resources,
 		Tags:        tags,
 	}
-	err := h.addRecipeFn(ctx, &recipe)
+	err := h.createRecipeFn(ctx, &recipe)
 	if err != nil {
 		return d.ID[d.Recipe]{}, err
 	}
 	return recipe.ID, nil
 }
 
-func (c *AddRecipe) mapResources(res []d.Resource) {
+func (c *CreateRecipe) mapResources(res []d.Resource) {
 	for _, r := range res {
 		res = append(res, d.Resource{
 			ID:    d.CreateID[d.Resource](),
@@ -71,7 +71,7 @@ func (c *AddRecipe) mapResources(res []d.Resource) {
 	}
 }
 
-func (c *AddRecipe) mapTags(tags []d.Tag) {
+func (c *CreateRecipe) mapTags(tags []d.Tag) {
 	for _, t := range c.Tags {
 		tags = append(tags, d.Tag{
 			ID:   d.CreateID[d.Tag](),

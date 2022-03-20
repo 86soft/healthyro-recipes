@@ -3,29 +3,26 @@ package queries
 import (
 	"context"
 	"github.com/86soft/healthyro-recipes/core"
+	"github.com/rs/zerolog"
 )
 
 type GetRecipeById struct {
-	RecipeID string
-}
-
-func NewGetRecipeById(id string) GetRecipeById {
-	return GetRecipeById{RecipeID: id}
+	RecipeID core.ID[core.Recipe]
 }
 
 type GetRecipeByIdHandler struct {
-	getRecipeFn func(ctx context.Context, recipeID core.RecipeID) (core.Recipe, error)
+	getRecipeFn func(ctx context.Context, id core.ID[core.Recipe]) (core.Recipe, error)
+	logger      zerolog.Logger
 }
 
-func NewGetRecipeByIdHandler(repo core.Store) (GetRecipeByIdHandler, error) {
-	if repo == nil {
-		panic("nil getRecipeFn inside NewGetRecipeByIdHandler")
+func NewGetRecipeByIdHandler(fn func(ctx context.Context, id core.ID[core.Recipe]) (core.Recipe, error), logger zerolog.Logger) (GetRecipeByIdHandler, error) {
+	if fn == nil {
+		return GetRecipeByIdHandler{}, &core.NilDependencyError{Name: "NewGetRecipeByIdHandler - fn"}
 	}
 
-	return GetRecipeByIdHandler{getRecipeFn: repo.GetRecipe}, nil
+	return GetRecipeByIdHandler{getRecipeFn: fn, logger: logger}, nil
 }
 
 func (h GetRecipeByIdHandler) Handle(ctx context.Context, query GetRecipeById) (core.Recipe, error) {
-	id := core.NewRecipeID(query.RecipeID)
-	return h.getRecipeFn(ctx, id)
+	return h.getRecipeFn(ctx, query.RecipeID)
 }

@@ -31,7 +31,7 @@ func NewRecipeClient(cc grpc.ClientConnInterface) RecipeClient {
 
 func (c *recipeClient) AddRecipe(ctx context.Context, in *AddRecipeRequest, opts ...grpc.CallOption) (*AddRecipeResponse, error) {
 	out := new(AddRecipeResponse)
-	err := c.cc.Invoke(ctx, "/Recipe/AddRecipe", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/Recipe/CreateRecipe", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +51,7 @@ type UnimplementedRecipeServer struct {
 }
 
 func (UnimplementedRecipeServer) AddRecipe(context.Context, *AddRecipeRequest) (*AddRecipeResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AddRecipe not implemented")
+	return nil, status.Errorf(codes.Unimplemented, "method CreateRecipe not implemented")
 }
 func (UnimplementedRecipeServer) mustEmbedUnimplementedRecipeServer() {}
 
@@ -76,7 +76,7 @@ func _Recipe_AddRecipe_Handler(srv interface{}, ctx context.Context, dec func(in
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/Recipe/AddRecipe",
+		FullMethod: "/Recipe/CreateRecipe",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(RecipeServer).AddRecipe(ctx, req.(*AddRecipeRequest))
@@ -92,7 +92,7 @@ var Recipe_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*RecipeServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "AddRecipe",
+			MethodName: "CreateRecipe",
 			Handler:    _Recipe_AddRecipe_Handler,
 		},
 	},

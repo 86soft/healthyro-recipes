@@ -33,7 +33,7 @@ func (r RecipeServer) AddRecipe(ctx context.Context, req *hproto.AddRecipeReques
 		tags = append(tags, t.GetName())
 	}
 
-	cmd := commands.AddRecipe{
+	cmd := commands.CreateRecipe{
 		Title:       req.GetTitle(),
 		Description: req.GetDescription(),
 		Resources:   res,

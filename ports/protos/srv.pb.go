@@ -305,8 +305,8 @@ var file_ports_protos_srv_proto_goTypes = []interface{}{
 var file_ports_protos_srv_proto_depIdxs = []int32{
 	2, // 0: AddRecipeRequest.resources:type_name -> AddRecipeRequest.Resource
 	3, // 1: AddRecipeRequest.tags:type_name -> AddRecipeRequest.Tag
-	0, // 2: Recipe.AddRecipe:input_type -> AddRecipeRequest
-	1, // 3: Recipe.AddRecipe:output_type -> AddRecipeResponse
+	0, // 2: Recipe.CreateRecipe:input_type -> AddRecipeRequest
+	1, // 3: Recipe.CreateRecipe:output_type -> AddRecipeResponse
 	3, // [3:4] is the sub-list for method output_type
 	2, // [2:3] is the sub-list for method input_type
 	2, // [2:2] is the sub-list for extension type_name

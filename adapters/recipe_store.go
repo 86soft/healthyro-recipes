@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func (m *MongoStorage) AddRecipe(ctx context.Context, recipe *d.Recipe) error {
+func (m *MongoStorage) CreateRecipe(ctx context.Context, recipe *d.Recipe) error {
 	createdAt := time.Now().UTC()
 
 	dbRecipeResources := make([]Resource, 0, len(recipe.Resources))

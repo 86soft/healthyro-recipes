@@ -2,13 +2,26 @@ package adapters
 
 import (
 	"context"
-	d "github.com/86soft/healthyro-recipes/core"
+	c "github.com/86soft/healthyro-recipes/core"
 	"go.mongodb.org/mongo-driver/bson"
 	"time"
 )
 
-func (m *MongoStorage) AddRecipeTag(ctx context.Context, id d.ID[d.Recipe], t *d.Tag) error {
+func (m *MongoStorage) CreateTag(ctx context.Context, name string) (c.ID[c.Tag], error) {
 	createdAt := time.Now().UTC()
+
+	tagColl := m.ForCollection(CollectionTags)
+
+	id := c.CreateID[c.Tag]()
+	_, err := tagColl.InsertOne(ctx, Tag{
+		Document: Document{CreatedAt: createdAt},
+		ID:       id.ID,
+		Name:     name,
+	})
+	return id, err
+}
+
+func (m *MongoStorage) AddTagToRecipe(ctx context.Context, recipeID c.ID[c.Recipe], t *c.Tag) error {
 	recipeColl := m.ForCollection(CollectionRecipes)
 
 	update := bson.M{"$push": bson.M{"tags": RecipeTag{
@@ -16,25 +29,19 @@ func (m *MongoStorage) AddRecipeTag(ctx context.Context, id d.ID[d.Recipe], t *d
 		Name: t.Name,
 	}}}
 
-	_, errOrNil := recipeColl.UpdateByID(ctx, id.ID, update)
+	_, errOrNil := recipeColl.UpdateByID(ctx, recipeID.ID, update)
 	if errOrNil != nil {
 		return errOrNil
 	}
 
 	tagColl := m.ForCollection(CollectionTags)
 
-	_, errOrNil = tagColl.InsertOne(ctx, Tag{
-		Document: Document{CreatedAt: createdAt},
-		ID:       t.ID.ID,
-		Name:     t.Name,
-		RecipeIDS: []string{
-			id.ID,
-		},
-	})
+	update = bson.M{"$push": bson.M{"recipeIds": recipeID.ID}}
+	_, errOrNil = tagColl.UpdateByID(ctx, t.ID.ID, update)
 	return errOrNil
 }
 
-func (m *MongoStorage) DeleteRecipeTag(ctx context.Context, recipeID d.ID[d.Recipe], tagID d.ID[d.Tag]) error {
+func (m *MongoStorage) RemoveTagFromRecipe(ctx context.Context, recipeID c.ID[c.Recipe], tagID c.ID[c.Tag]) error {
 	recipeColl := m.ForCollection(CollectionRecipes)
 
 	removeTagFromRecipe := bson.M{"$pull": bson.M{"tags": bson.M{"_id": tagID.ID}}}
