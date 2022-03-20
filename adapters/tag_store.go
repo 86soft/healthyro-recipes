@@ -2,17 +2,17 @@ package adapters
 
 import (
 	"context"
-	d "github.com/86soft/healthyro-recipes/domain"
+	d "github.com/86soft/healthyro-recipes/core"
 	"go.mongodb.org/mongo-driver/bson"
 	"time"
 )
 
-func (m *MongoStorage) AddRecipeTag(ctx context.Context, id d.ID[Recipe], t *Tag) error {
+func (m *MongoStorage) AddRecipeTag(ctx context.Context, id d.ID[d.Recipe], t *d.Tag) error {
 	createdAt := time.Now().UTC()
 	recipeColl := m.ForCollection(CollectionRecipes)
 
 	update := bson.M{"$push": bson.M{"tags": RecipeTag{
-		ID:   t.ID,
+		ID:   t.ID.ID,
 		Name: t.Name,
 	}}}
 
@@ -25,7 +25,7 @@ func (m *MongoStorage) AddRecipeTag(ctx context.Context, id d.ID[Recipe], t *Tag
 
 	_, errOrNil = tagColl.InsertOne(ctx, Tag{
 		Document: Document{CreatedAt: createdAt},
-		ID:       t.ID,
+		ID:       t.ID.ID,
 		Name:     t.Name,
 		RecipeIDS: []string{
 			id.ID,
@@ -34,7 +34,7 @@ func (m *MongoStorage) AddRecipeTag(ctx context.Context, id d.ID[Recipe], t *Tag
 	return errOrNil
 }
 
-func (m *MongoStorage) DeleteRecipeTag(ctx context.Context, recipeID d.ID[Recipe], tagID d.ID[Tag]) error {
+func (m *MongoStorage) DeleteRecipeTag(ctx context.Context, recipeID d.ID[d.Recipe], tagID d.ID[d.Tag]) error {
 	recipeColl := m.ForCollection(CollectionRecipes)
 
 	removeTagFromRecipe := bson.M{"$pull": bson.M{"tags": bson.M{"_id": tagID.ID}}}

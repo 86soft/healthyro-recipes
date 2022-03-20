@@ -2,7 +2,7 @@ package queries
 
 import (
 	"context"
-	"github.com/86soft/healthyro-recipes/domain"
+	"github.com/86soft/healthyro-recipes/core"
 )
 
 type GetRecipeById struct {
@@ -14,10 +14,10 @@ func NewGetRecipeById(id string) GetRecipeById {
 }
 
 type GetRecipeByIdHandler struct {
-	getRecipeFn func(ctx context.Context, recipeID domain.RecipeID) (domain.Recipe, error)
+	getRecipeFn func(ctx context.Context, recipeID core.RecipeID) (core.Recipe, error)
 }
 
-func NewGetRecipeByIdHandler(repo domain.Store) (GetRecipeByIdHandler, error) {
+func NewGetRecipeByIdHandler(repo core.Store) (GetRecipeByIdHandler, error) {
 	if repo == nil {
 		panic("nil getRecipeFn inside NewGetRecipeByIdHandler")
 	}
@@ -25,7 +25,7 @@ func NewGetRecipeByIdHandler(repo domain.Store) (GetRecipeByIdHandler, error) {
 	return GetRecipeByIdHandler{getRecipeFn: repo.GetRecipe}, nil
 }
 
-func (h GetRecipeByIdHandler) Handle(ctx context.Context, query GetRecipeById) (domain.Recipe, error) {
-	id := domain.NewRecipeID(query.RecipeID)
+func (h GetRecipeByIdHandler) Handle(ctx context.Context, query GetRecipeById) (core.Recipe, error) {
+	id := core.NewRecipeID(query.RecipeID)
 	return h.getRecipeFn(ctx, id)
 }

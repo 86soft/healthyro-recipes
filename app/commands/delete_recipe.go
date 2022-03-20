@@ -2,9 +2,9 @@ package commands
 
 import (
 	"context"
-	"github.com/86soft/healthyro-recipes/app"
-	"github.com/86soft/healthyro-recipes/domain"
+	d "github.com/86soft/healthyro-recipes/core"
 	"github.com/google/uuid"
+	l "github.com/rs/zerolog"
 )
 
 type DeleteRecipe struct {
@@ -12,26 +12,30 @@ type DeleteRecipe struct {
 }
 
 type DeleteRecipeHandler struct {
-	deleteRecipeFn func(ctx context.Context, recipeID domain.ID[domain.Recipe]) error
+	deleteRecipeFn func(ctx context.Context, id d.ID[d.Recipe]) error
+	logger         l.Logger
 }
 
 func NewDeleteRecipe(id string) DeleteRecipe {
 	return DeleteRecipe{recipeID: id}
 }
 
-func NewDeleteRecipeHandler(repo domain.Store) DeleteRecipeHandler {
-	if repo == nil {
+func NewDeleteRecipeHandler(fn func(
+	ctx context.Context,
+	id d.ID[d.Recipe],
+) error, logger l.Logger) DeleteRecipeHandler {
+	if fn == nil {
 		panic("nil deleteRecipeFn inside NewDeleteRecipeHandler")
 	}
-	return DeleteRecipeHandler{deleteRecipeFn: repo.DeleteRecipe}
+	return DeleteRecipeHandler{deleteRecipeFn: fn, logger: logger}
 }
 func (h *DeleteRecipeHandler) Handle(ctx context.Context, cmd DeleteRecipe) error {
 	_, err := uuid.Parse(cmd.recipeID)
 	if err != nil {
-		return &app.CorruptedUUIDError{
+		return &d.CorruptedUUIDError{
 			ID:      cmd.recipeID,
 			Details: err.Error(),
 		}
 	}
-	return h.deleteRecipeFn(ctx, id)
+	return h.deleteRecipeFn(ctx, d.FromStringID[d.Recipe](cmd.recipeID))
 }

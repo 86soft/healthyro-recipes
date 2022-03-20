@@ -2,7 +2,7 @@ package adapters
 
 import (
 	"context"
-	"github.com/86soft/healthyro-recipes/domain"
+	"github.com/86soft/healthyro-recipes/core"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"time"
@@ -18,7 +18,7 @@ type MongoStorage struct {
 	client *mongo.Client
 }
 
-var _ domain.Store = (*MongoStorage)(nil)
+var _ core.Store = (*MongoStorage)(nil)
 
 func NewMongoClient(uri string, timeoutInSec time.Duration) (*mongo.Client, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeoutInSec*time.Second)

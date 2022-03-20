@@ -2,7 +2,7 @@ package app
 
 import (
 	"fmt"
-	"github.com/86soft/healthyro-recipes/domain"
+	"github.com/86soft/healthyro-recipes/core"
 	"github.com/rs/zerolog"
 )
 
@@ -12,7 +12,7 @@ type Application struct {
 	Log      zerolog.Logger
 }
 
-func NewApplication(repo domain.Store, logger zerolog.Logger) (Application, error) {
+func NewApplication(repo core.Store, logger zerolog.Logger) (Application, error) {
 	c, err := NewCommandHandlers(repo, logger)
 	if err != nil {
 		return Application{}, fmt.Errorf("NewApplication: %w", err)

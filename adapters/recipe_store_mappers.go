@@ -1,7 +1,7 @@
 package adapters
 
 import (
-	d "github.com/86soft/healthyro-recipes/domain"
+	d "github.com/86soft/healthyro-recipes/core"
 	"time"
 )
 

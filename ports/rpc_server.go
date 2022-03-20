@@ -46,6 +46,6 @@ func (r RecipeServer) AddRecipe(ctx context.Context, req *hproto.AddRecipeReques
 	}
 
 	return &hproto.AddRecipeResponse{
-		RecipeId: id.GetID(),
+		RecipeId: id.ID,
 	}, nil
 }

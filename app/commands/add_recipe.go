@@ -2,9 +2,7 @@ package commands
 
 import (
 	"context"
-	"github.com/86soft/healthyro-recipes/app"
-	d "github.com/86soft/healthyro-recipes/domain"
-	uuid "github.com/google/uuid"
+	d "github.com/86soft/healthyro-recipes/core"
 	"github.com/rs/zerolog"
 )
 
@@ -26,14 +24,17 @@ type AddRecipeHandler struct {
 	log         zerolog.Logger
 }
 
-func NewAddRecipeHandler(db d.Store, logger zerolog.Logger) (AddRecipeHandler, error) {
-	if db == nil {
-		return AddRecipeHandler{}, &app.NilDependencyError{
-			Name: "NewAddRecipeHandler - db",
+func NewAddRecipeHandler(
+	fn func(ctx context.Context, r *d.Recipe) error,
+	logger zerolog.Logger,
+) (AddRecipeHandler, error) {
+	if fn == nil {
+		return AddRecipeHandler{}, &d.NilDependencyError{
+			Name: "NewAddRecipeHandler - fn",
 		}
 	}
 	return AddRecipeHandler{
-		addRecipeFn: db.AddRecipe,
+		addRecipeFn: fn,
 		log:         logger,
 	}, nil
 }
@@ -46,7 +47,7 @@ func (h *AddRecipeHandler) Handle(ctx context.Context, cmd AddRecipe) (d.ID[d.Re
 	cmd.mapTags(tags)
 
 	recipe := d.Recipe{
-		ID:          d.ID[d.Recipe]{ID: uuid.New().String()},
+		ID:          d.CreateID[d.Recipe](),
 		Title:       cmd.Title,
 		Description: cmd.Description,
 		Resources:   resources,

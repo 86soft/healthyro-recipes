@@ -1,4 +1,4 @@
-package domain
+package core
 
 type Tag struct {
 	ID[Tag]

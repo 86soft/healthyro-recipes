@@ -2,35 +2,38 @@ package commands
 
 import (
 	"context"
-	"github.com/86soft/healthyro-recipes/domain"
+	d "github.com/86soft/healthyro-recipes/core"
+	l "github.com/rs/zerolog"
 )
 
 type UpdateRecipeDescription struct {
-	RecipeID    string
+	RecipeID    d.ID[d.Recipe]
 	Description string
 }
 
 type UpdateRecipeDescriptionHandler struct {
-	updateDescriptionFn func(ctx context.Context, recipeID domain.RecipeID, description string) error
+	updateDescriptionFn func(ctx context.Context, id d.ID[d.Recipe], description string) error
+	logger              l.Logger
 }
 
-func NewUpdateRecipeDescription(recipeID string, description string) UpdateRecipeDescription {
-	return UpdateRecipeDescription{
-		RecipeID:    recipeID,
-		Description: description,
+func NewUpdateRecipeDescriptionHandler(
+	fn func(
+		ctx context.Context,
+		id d.ID[d.Recipe],
+		description string,
+	) error,
+	logger l.Logger) (UpdateRecipeDescriptionHandler, error) {
+	if fn == nil {
+		return UpdateRecipeDescriptionHandler{}, &d.NilDependencyError{
+			Name: "UpdateRecipeDescriptionHandler - fn",
+		}
 	}
-}
-func NewUpdateRecipeDescriptionHandler(repo domain.Store) UpdateRecipeDescriptionHandler {
-	if repo == nil {
-		panic("nil updateDescriptionFn inside NewUpdateRecipeDescriptionHandler")
-	}
-	return UpdateRecipeDescriptionHandler{updateDescriptionFn: repo.UpdateRecipeDescription}
+	return UpdateRecipeDescriptionHandler{updateDescriptionFn: fn, logger: logger}, nil
 }
 
 func (h *UpdateRecipeDescriptionHandler) Handle(ctx context.Context, cmd UpdateRecipeDescription) error {
-	if len(cmd.Description) > domain.DescriptionLengthLimit {
-		return domain.ErrLengthLimitExceeded
+	if len(cmd.Description) > d.DescriptionLengthLimit {
+		return d.ErrLengthLimitExceeded
 	}
-	id := domain.NewRecipeID(cmd.RecipeID)
-	return h.updateDescriptionFn(ctx, id, cmd.Description)
+	return h.updateDescriptionFn(ctx, cmd.RecipeID, cmd.Description)
 }

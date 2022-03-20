@@ -1,4 +1,4 @@
-package domain
+package core
 
 type Resource struct {
 	ID    ID[Resource]

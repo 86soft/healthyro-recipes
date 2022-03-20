@@ -3,8 +3,7 @@ package adapters
 import (
 	"context"
 	"fmt"
-	"github.com/86soft/healthyro-recipes/app"
-	d "github.com/86soft/healthyro-recipes/domain"
+	d "github.com/86soft/healthyro-recipes/core"
 	"go.mongodb.org/mongo-driver/bson"
 	"time"
 )
@@ -40,6 +39,24 @@ func (m *MongoStorage) AddRecipe(ctx context.Context, recipe *d.Recipe) error {
 		return errOrNil
 	}
 	_, errOrNil = tagsCol.InsertMany(ctx, dbTags)
+	return errOrNil
+}
+
+func (m *MongoStorage) AddRecipeResource(ctx context.Context, id d.ID[d.Recipe], r *d.Resource) error {
+	createdAt := time.Now().UTC()
+	recipeColl := m.ForCollection(CollectionRecipes)
+
+	update := bson.M{"$push": bson.M{"resources": Resource{
+		Document: Document{CreatedAt: createdAt},
+		ID:       r.ID.ID,
+		Name:     r.Name,
+		Kind:     r.Kind,
+		Value:    r.Value,
+	}}}
+	_, errOrNil := recipeColl.UpdateByID(ctx, id.ID, update)
+	if errOrNil != nil {
+		return errOrNil
+	}
 	return errOrNil
 }
 
@@ -101,7 +118,7 @@ func (m *MongoStorage) ListRecipes(ctx context.Context) ([]d.Recipe, error) {
 	return recipes, nil
 }
 
-func (m *MongoStorage) UpdateRecipeTitle(ctx context.Context, id d.ID[Recipe], title string) error {
+func (m *MongoStorage) UpdateRecipeTitle(ctx context.Context, id d.ID[d.Recipe], title string) error {
 	c := m.ForCollection(CollectionRecipes)
 
 	update := bson.D{{"$set", bson.D{{"title", title}}}}
@@ -111,7 +128,7 @@ func (m *MongoStorage) UpdateRecipeTitle(ctx context.Context, id d.ID[Recipe], t
 	}
 
 	if res.ModifiedCount != 1 {
-		return &app.OnDBUpdateError{
+		return &d.OnDBUpdateError{
 			ID:      id.ID,
 			Details: fmt.Sprintf("ModifiedCount is different than 1, count: %v", res.ModifiedCount),
 		}
@@ -120,7 +137,7 @@ func (m *MongoStorage) UpdateRecipeTitle(ctx context.Context, id d.ID[Recipe], t
 	return nil
 }
 
-func (m *MongoStorage) UpdateRecipeDescription(ctx context.Context, id d.ID[Recipe], description string) error {
+func (m *MongoStorage) UpdateRecipeDescription(ctx context.Context, id d.ID[d.Recipe], description string) error {
 	c := m.ForCollection(CollectionRecipes)
 
 	update := bson.D{{"$set", bson.D{{"description", description}}}}
@@ -130,7 +147,7 @@ func (m *MongoStorage) UpdateRecipeDescription(ctx context.Context, id d.ID[Reci
 	}
 
 	if res.ModifiedCount != 1 {
-		return &app.OnDBUpdateError{
+		return &d.OnDBUpdateError{
 			ID:      id.ID,
 			Details: fmt.Sprintf("ModifiedCount is different than 1, count: %v", res.ModifiedCount),
 		}
@@ -139,13 +156,13 @@ func (m *MongoStorage) UpdateRecipeDescription(ctx context.Context, id d.ID[Reci
 	return nil
 }
 
-func (m *MongoStorage) DeleteRecipe(ctx context.Context, id d.ID[Recipe]) error {
+func (m *MongoStorage) DeleteRecipe(ctx context.Context, id d.ID[d.Recipe]) error {
 	c := m.ForCollection(CollectionRecipes)
 	_, errOrNil := c.DeleteOne(ctx, id.ID)
 	return errOrNil
 }
 
-func (m *MongoStorage) DeleteRecipeResource(ctx context.Context, recipeID d.ID[Recipe], resourceID d.ID[Resource]) error {
+func (m *MongoStorage) DeleteRecipeResource(ctx context.Context, recipeID d.ID[d.Recipe], resourceID d.ID[d.Resource]) error {
 	c := m.ForCollection(CollectionRecipes)
 
 	update := bson.M{"$pull": bson.M{"resources": bson.M{"_id": resourceID.ID}}}

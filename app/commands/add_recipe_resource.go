@@ -2,46 +2,41 @@ package commands
 
 import (
 	"context"
-	"github.com/86soft/healthyro-recipes/app"
-	"github.com/86soft/healthyro-recipes/domain"
+	d "github.com/86soft/healthyro-recipes/core"
 )
 
 type AddRecipeResource struct {
-	name  string
-	kind  string
-	value string
-	id    string
+	Name     string
+	Kind     string
+	Value    string
+	RecipeID d.ID[d.Recipe]
 }
 
 type AddRecipeResourceHandler struct {
-	addRecipeResource func(ctx context.Context, id domain.RecipeID, r *domain.Resource) error
-}
-
-func NewAddRecipeResource(name, kind, value string) AddRecipeResource {
-	return AddRecipeResource{
-		name:  name,
-		kind:  kind,
-		value: value,
-	}
+	addRecipeResource func(
+		ctx context.Context,
+		id d.ID[d.Recipe],
+		r *d.Resource,
+	) error
 }
 
 func NewAddRecipeResourceHandler(fn func(
 	ctx context.Context,
-	id domain.RecipeID,
-	r *domain.Resource,
+	id d.ID[d.Recipe],
+	r *d.Resource,
 ) error) (AddRecipeResourceHandler, error) {
 	if fn == nil {
-		return AddRecipeResourceHandler{}, &app.NilDependencyError{Name: "AddRecipeResourceHandler"}
+		return AddRecipeResourceHandler{}, &d.NilDependencyError{Name: "AddRecipeResourceHandler - fn"}
 	}
 	return AddRecipeResourceHandler{addRecipeResource: fn}, nil
 }
 
 func (h *AddRecipeResourceHandler) Handle(ctx context.Context, cmd AddRecipeResource) error {
-	/*r := domain.Resource{
+	r := d.Resource{
+		ID:    d.CreateID[d.Resource](),
 		Name:  cmd.Name,
-		Kind:  cmd.kind,
-		Value: cmd.value,
-	}*/
-	//return h.addRecipeResource(ctx, cmd.ID, &r)
-	return nil
+		Kind:  cmd.Kind,
+		Value: cmd.Value,
+	}
+	return h.addRecipeResource(ctx, cmd.RecipeID, &r)
 }

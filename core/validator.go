@@ -1,4 +1,4 @@
-package domain
+package core
 
 const (
 	TitleLengthLimit       = 100

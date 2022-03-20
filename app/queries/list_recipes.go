@@ -2,7 +2,7 @@ package queries
 
 import (
 	"context"
-	"github.com/86soft/healthyro-recipes/domain"
+	"github.com/86soft/healthyro-recipes/core"
 )
 
 type ListRecipes struct {
@@ -13,16 +13,16 @@ func NewListRecipes() ListRecipes {
 }
 
 type ListRecipesHandler struct {
-	getRecipesFn func(ctx context.Context) ([]domain.Recipe, error)
+	getRecipesFn func(ctx context.Context) ([]core.Recipe, error)
 }
 
-func NewListRecipesHandler(repo domain.Store) ListRecipesHandler {
+func NewListRecipesHandler(repo core.Store) ListRecipesHandler {
 	if repo == nil {
 		panic("nil getRecipeFn inside NewListRecipesHandler")
 	}
 	return ListRecipesHandler{getRecipesFn: repo.GetRecipes}
 }
 
-func (h ListRecipesHandler) Handle(ctx context.Context) ([]domain.Recipe, error) {
+func (h ListRecipesHandler) Handle(ctx context.Context) ([]core.Recipe, error) {
 	return h.getRecipesFn(ctx)
 }
