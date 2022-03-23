@@ -11,6 +11,7 @@ type Store interface {
 }
 type RecipeStore interface {
 	ListRecipes(ctx context.Context) ([]Recipe, error)
+	FindRecipesByName(ctx context.Context, name string) ([]Recipe, error)
 	GetRecipe(ctx context.Context, id ID[Recipe]) (Recipe, error)
 	CreateRecipe(ctx context.Context, r *Recipe) error
 	UpdateRecipeTitle(ctx context.Context, id ID[Recipe], title string) error

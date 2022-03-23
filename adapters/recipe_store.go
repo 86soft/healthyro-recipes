@@ -5,6 +5,7 @@ import (
 	"fmt"
 	d "github.com/86soft/healthyro-recipes/core"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 	"time"
 )
 
@@ -83,39 +84,40 @@ func (m *MongoStorage) GetRecipe(ctx context.Context, id d.ID[d.Recipe]) (d.Reci
 	}, nil
 }
 
+func (m *MongoStorage) FindRecipesByName(ctx context.Context, name string) ([]d.Recipe, error) {
+	c := m.ForCollection(CollectionRecipes)
+	index := mongo.IndexModel{
+		Keys: bson.D{
+			{"title", "text"},
+		},
+		Options: nil,
+	}
+	_, err := c.Indexes().CreateOne(ctx, index)
+	if err != nil {
+		return nil, err
+	}
+
+	phrase := fmt.Sprintf("\"%s\"", name)
+	cursor, err := c.Find(ctx, bson.M{"text": bson.M{"$search": phrase}}) // should consider count, but we need pagination in future anyway
+	if err != nil {
+		return nil, err
+	}
+	var recipes []d.Recipe
+
+	errOrNil := mapFromRecipes(cursor, ctx, recipes)
+	return recipes, errOrNil
+}
+
 func (m *MongoStorage) ListRecipes(ctx context.Context) ([]d.Recipe, error) {
 	c := m.ForCollection(CollectionRecipes)
-
 	cursor, err := c.Find(ctx, bson.D{{}}) // should consider count, but we need pagination in future anyway
 	if err != nil {
 		return nil, err
 	}
 	var recipes []d.Recipe
 
-	for cursor.Next(ctx) {
-		dbRecipe := Recipe{}
-		err := cursor.Decode(&dbRecipe)
-		if err != nil {
-			return nil, err
-		}
-		id := d.FromStringID[d.Recipe](dbRecipe.ID)
-
-		rResources := make([]d.Resource, 0, len(dbRecipe.Resources))
-		mapFromResources(dbRecipe.Resources, rResources)
-
-		tags := make([]d.Tag, 0, len(dbRecipe.Tags))
-		mapFromRecipeTags(id, dbRecipe.Tags, tags)
-
-		recipes = append(recipes,
-			d.Recipe{
-				ID:          id,
-				Title:       dbRecipe.Title,
-				Description: dbRecipe.Description,
-				Resources:   rResources,
-				Tags:        tags,
-			})
-	}
-	return recipes, nil
+	errOrNil := mapFromRecipes(cursor, ctx, recipes)
+	return recipes, errOrNil
 }
 
 func (m *MongoStorage) UpdateRecipeTitle(ctx context.Context, id d.ID[d.Recipe], title string) error {
