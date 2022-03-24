@@ -33,7 +33,6 @@ func mapFromResources(from []Resource, to []d.Resource) {
 func mapToRecipeTags(from []d.Tag, to []RecipeTag) {
 	for _, t := range from {
 		to = append(to, RecipeTag{
-			ID:   t.ID.ID,
 			Name: t.Name,
 		})
 	}
@@ -42,7 +41,6 @@ func mapToRecipeTags(from []d.Tag, to []RecipeTag) {
 func mapFromRecipeTags(id d.ID[d.Recipe], from []RecipeTag, to []d.Tag) {
 	for _, t := range from {
 		to = append(to, d.Tag{
-			ID:       d.FromStringID[Tag](t.ID),
 			RecipeId: id,
 			Name:     t.Name,
 		})
@@ -53,7 +51,6 @@ func mapToTags(createdAt time.Time, recipe *d.Recipe, from []d.Tag, to []any) {
 	for _, tag := range from {
 		to = append(to, Tag{
 			Document: Document{CreatedAt: createdAt},
-			ID:       tag.ID.ID,
 			Name:     tag.Name,
 			RecipeIDS: []string{
 				recipe.ID.ID,
@@ -76,15 +73,15 @@ func mapFromRecipe(from Recipe) d.Recipe {
 	return outRecipe
 }
 
-func mapFromRecipes(cursor *mongo.Cursor, ctx context.Context, output []d.Recipe) error {
+func mapFromRecipes(cursor *mongo.Cursor, ctx context.Context) ([]d.Recipe, error) {
+	var recipes []d.Recipe
 	for cursor.Next(ctx) {
 		dbRecipe := Recipe{}
 		err := cursor.Decode(&dbRecipe)
 		if err != nil {
-			return err
+			return nil, err
 		}
-
-		output = append(output, mapFromRecipe(dbRecipe))
+		recipes = append(recipes, mapFromRecipe(dbRecipe))
 	}
-	return nil
+	return recipes, nil
 }

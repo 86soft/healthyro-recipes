@@ -102,10 +102,25 @@ func (m *MongoStorage) FindRecipesByName(ctx context.Context, name string) ([]d.
 	if err != nil {
 		return nil, err
 	}
-	var recipes []d.Recipe
 
-	errOrNil := mapFromRecipes(cursor, ctx, recipes)
-	return recipes, errOrNil
+	return mapFromRecipes(cursor, ctx)
+}
+
+func (m *MongoStorage) FindRecipesByTags(ctx context.Context, tags []d.Tag) ([]d.Recipe, error) {
+	c := m.ForCollection(CollectionRecipes)
+	names := make([]string, 0, len(tags))
+	for _, tag := range tags {
+		names = append(names, tag.Name)
+	}
+
+	query := bson.D{
+		{"tags", bson.D{{"$all", names}}},
+	}
+	cursor, errOrNil := c.Find(ctx, query)
+	if errOrNil != nil {
+		return nil, errOrNil
+	}
+	return mapFromRecipes(cursor, ctx)
 }
 
 func (m *MongoStorage) ListRecipes(ctx context.Context) ([]d.Recipe, error) {
@@ -114,10 +129,8 @@ func (m *MongoStorage) ListRecipes(ctx context.Context) ([]d.Recipe, error) {
 	if err != nil {
 		return nil, err
 	}
-	var recipes []d.Recipe
 
-	errOrNil := mapFromRecipes(cursor, ctx, recipes)
-	return recipes, errOrNil
+	return mapFromRecipes(cursor, ctx)
 }
 
 func (m *MongoStorage) UpdateRecipeTitle(ctx context.Context, id d.ID[d.Recipe], title string) error {

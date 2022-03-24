@@ -19,8 +19,7 @@ type Recipe struct {
 	Tags        []RecipeTag `bson:"tags,omitempty"`
 }
 type RecipeTag struct {
-	ID   string `bson:"_id"`
-	Name string
+	Name string `bson:"_id"`
 }
 
 type Resource struct {
@@ -33,7 +32,6 @@ type Resource struct {
 
 type Tag struct {
 	Document  `bson:",inline"`
-	ID        string   `bson:"_id"`
-	Name      string   `bson:"name"`
+	Name      string   `bson:"_id"`
 	RecipeIDS []string `bson:"recipeIds"`
 }

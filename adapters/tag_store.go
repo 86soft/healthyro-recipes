@@ -15,7 +15,6 @@ func (m *MongoStorage) CreateTag(ctx context.Context, name string) (c.ID[c.Tag],
 	id := c.CreateID[c.Tag]()
 	_, err := tagColl.InsertOne(ctx, Tag{
 		Document: Document{CreatedAt: createdAt},
-		ID:       id.ID,
 		Name:     name,
 	})
 	return id, err
@@ -25,7 +24,6 @@ func (m *MongoStorage) AddTagToRecipe(ctx context.Context, recipeID c.ID[c.Recip
 	recipeColl := m.ForCollection(CollectionRecipes)
 
 	update := bson.M{"$push": bson.M{"tags": RecipeTag{
-		ID:   t.ID.ID,
 		Name: t.Name,
 	}}}
 
@@ -37,7 +35,7 @@ func (m *MongoStorage) AddTagToRecipe(ctx context.Context, recipeID c.ID[c.Recip
 	tagColl := m.ForCollection(CollectionTags)
 
 	update = bson.M{"$push": bson.M{"recipeIds": recipeID.ID}}
-	_, errOrNil = tagColl.UpdateByID(ctx, t.ID.ID, update)
+	_, errOrNil = tagColl.UpdateByID(ctx, t.Name, update)
 	return errOrNil
 }
 

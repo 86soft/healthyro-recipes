@@ -6,23 +6,26 @@ import (
 	"github.com/rs/zerolog"
 )
 
-type GetRecipesByName struct {
-	RecipeID core.ID[core.Recipe]
+type FindRecipesByName struct {
+	Name string
 }
 
-type GetRecipesByNameHandler struct {
-	getRecipeFn func(ctx context.Context, id core.ID[core.Recipe]) (core.Recipe, error)
-	logger      zerolog.Logger
+type FindRecipesByNameHandler struct {
+	findFn func(ctx context.Context, name string) (core.Recipe, error)
+	logger zerolog.Logger
 }
 
-func NewGetRecipesByName(fn func(ctx context.Context, id core.ID[core.Recipe]) (core.Recipe, error), logger zerolog.Logger) (GetRecipeByIdHandler, error) {
+func NewGetRecipesByNameHandler(
+	fn func(ctx context.Context, name string) (core.Recipe, error),
+	logger zerolog.Logger,
+) (FindRecipesByNameHandler, error) {
 	if fn == nil {
-		return GetRecipeByIdHandler{}, &core.NilDependencyError{Name: "NewGetRecipeByIdHandler - fn"}
+		return FindRecipesByNameHandler{}, &core.NilDependencyError{Name: "FindRecipesByNameHandler - fn"}
 	}
 
-	return GetRecipeByIdHandler{getRecipeFn: fn, logger: logger}, nil
+	return FindRecipesByNameHandler{findFn: fn, logger: logger}, nil
 }
 
-func (h GetRecipesByNameHandler) Handle(ctx context.Context, query GetRecipesByName) (core.Recipe, error) {
-	return h.getRecipeFn(ctx, query.RecipeID)
+func (h *FindRecipesByNameHandler) Handle(ctx context.Context, query FindRecipesByName) (core.Recipe, error) {
+	return h.findFn(ctx, query.Name)
 }

@@ -1,7 +1,7 @@
 package core
 
 import (
-	"context"
+	c "context"
 )
 
 type Store interface {
@@ -10,22 +10,23 @@ type Store interface {
 	ResourceStore
 }
 type RecipeStore interface {
-	ListRecipes(ctx context.Context) ([]Recipe, error)
-	FindRecipesByName(ctx context.Context, name string) ([]Recipe, error)
-	GetRecipe(ctx context.Context, id ID[Recipe]) (Recipe, error)
-	CreateRecipe(ctx context.Context, r *Recipe) error
-	UpdateRecipeTitle(ctx context.Context, id ID[Recipe], title string) error
-	UpdateRecipeDescription(ctx context.Context, id ID[Recipe], description string) error
-	DeleteRecipe(ctx context.Context, id ID[Recipe]) error
+	ListRecipes(ctx c.Context) ([]Recipe, error)
+	FindRecipesByName(ctx c.Context, name string) ([]Recipe, error)
+	FindRecipesByTags(ctx c.Context, tags []Tag) ([]Recipe, error)
+	GetRecipe(ctx c.Context, id ID[Recipe]) (Recipe, error)
+	CreateRecipe(ctx c.Context, r *Recipe) error
+	UpdateRecipeTitle(ctx c.Context, id ID[Recipe], title string) error
+	UpdateRecipeDescription(ctx c.Context, id ID[Recipe], description string) error
+	DeleteRecipe(ctx c.Context, id ID[Recipe]) error
 }
 
 type ResourceStore interface {
-	DeleteRecipeResource(ctx context.Context, recipeID ID[Recipe], resourceID ID[Resource]) error
-	AddRecipeResource(ctx context.Context, id ID[Recipe], r *Resource) error
+	DeleteRecipeResource(ctx c.Context, recipeID ID[Recipe], resourceID ID[Resource]) error
+	AddRecipeResource(ctx c.Context, id ID[Recipe], r *Resource) error
 }
 
 type TagStore interface {
-	CreateTag(ctx context.Context, name string) (ID[Tag], error)
-	AddTagToRecipe(ctx context.Context, id ID[Recipe], t *Tag) error
-	RemoveTagFromRecipe(ctx context.Context, recipeID ID[Recipe], tagID ID[Tag]) error
+	CreateTag(ctx c.Context, name string) (ID[Tag], error)
+	AddTagToRecipe(ctx c.Context, id ID[Recipe], t *Tag) error
+	RemoveTagFromRecipe(ctx c.Context, recipeID ID[Recipe], tagID ID[Tag]) error
 }
