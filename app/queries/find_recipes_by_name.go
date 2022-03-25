@@ -11,12 +11,12 @@ type FindRecipesByName struct {
 }
 
 type FindRecipesByNameHandler struct {
-	findFn func(ctx context.Context, name string) (core.Recipe, error)
+	findFn func(ctx context.Context, name string) ([]core.Recipe, error)
 	logger zerolog.Logger
 }
 
-func NewGetRecipesByNameHandler(
-	fn func(ctx context.Context, name string) (core.Recipe, error),
+func NewFindRecipesByNameHandler(
+	fn func(ctx context.Context, name string) ([]core.Recipe, error),
 	logger zerolog.Logger,
 ) (FindRecipesByNameHandler, error) {
 	if fn == nil {
@@ -26,6 +26,6 @@ func NewGetRecipesByNameHandler(
 	return FindRecipesByNameHandler{findFn: fn, logger: logger}, nil
 }
 
-func (h *FindRecipesByNameHandler) Handle(ctx context.Context, query FindRecipesByName) (core.Recipe, error) {
+func (h *FindRecipesByNameHandler) Handle(ctx context.Context, query FindRecipesByName) ([]core.Recipe, error) {
 	return h.findFn(ctx, query.Name)
 }

@@ -51,12 +51,10 @@ func (h *AddTagToRecipeHandler) Handle(ctx context.Context, cmd AddTagToRecipe) 
 
 func (h *AddTagToRecipeHandler) GetOrCreateTag(ctx context.Context, cmd AddTagToRecipe) (c.Tag, error) {
 	var err error
-	tagID := cmd.TagID
 	if cmd.CreateNewTag {
-		tagID, err = h.createTagFn(ctx, cmd.Name)
+		_, err = h.createTagFn(ctx, cmd.Name)
 	}
 	return c.Tag{
-		ID:       tagID,
 		RecipeId: cmd.RecipeID,
 		Name:     cmd.Name,
 	}, err

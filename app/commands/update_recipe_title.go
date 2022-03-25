@@ -19,15 +19,15 @@ type UpdateRecipeTitleHandler struct {
 func NewUpdateRecipeTitleHandler(
 	fn func(ctx context.Context, id c.ID[c.Recipe], title string) error,
 	logger zerolog.Logger,
-) UpdateRecipeTitleHandler {
+) (UpdateRecipeTitleHandler, error) {
 	if fn == nil {
-		panic("nil updateDescriptionFn inside NewUpdateRecipeTitleHandler")
+		return UpdateRecipeTitleHandler{}, &c.NilDependencyError{Name: "NewUpdateRecipeTitleHandler - fn"}
 	}
 
 	return UpdateRecipeTitleHandler{
 		updateRecipeFn: fn,
 		logger:         logger,
-	}
+	}, nil
 }
 
 func (h *UpdateRecipeTitleHandler) Handle(ctx context.Context, cmd UpdateRecipeTitle) error {

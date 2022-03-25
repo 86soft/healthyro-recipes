@@ -22,7 +22,7 @@ func mapToResources(createdAt time.Time, from []d.Resource, to []Resource) {
 func mapFromResources(from []Resource, to []d.Resource) {
 	for _, res := range from {
 		to = append(to, d.Resource{
-			ID:    d.FromStringID[Resource](res.ID),
+			ID:    d.FromStringID[d.Resource](res.ID),
 			Name:  res.Name,
 			Kind:  res.Kind,
 			Value: res.Value,

@@ -74,7 +74,6 @@ func (c *CreateRecipe) mapResources(res []d.Resource) {
 func (c *CreateRecipe) mapTags(tags []d.Tag) {
 	for _, t := range c.Tags {
 		tags = append(tags, d.Tag{
-			ID:   d.CreateID[d.Tag](),
 			Name: t,
 		})
 	}

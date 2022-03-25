@@ -21,7 +21,7 @@ type RecipeStore interface {
 }
 
 type ResourceStore interface {
-	DeleteRecipeResource(ctx c.Context, recipeID ID[Recipe], resourceID ID[Resource]) error
+	RemoveResourceFromRecipe(ctx c.Context, recipeID ID[Recipe], resourceID ID[Resource]) error
 	AddRecipeResource(ctx c.Context, id ID[Recipe], r *Resource) error
 }
 

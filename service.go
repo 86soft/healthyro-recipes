@@ -46,7 +46,7 @@ func setup() (*Service, error) {
 	local := flag.Bool("local", false,
 		"determines if service is running locally, if so it needs passed arguments")
 
-	customConn := flag.String("conn", "", "mongo database connection string")
+	customConn := flag.String("conn", "", "adapters database connection string")
 	customGrpcPort := flag.String("grpcPort", "", "grpc server port")
 
 	flag.Parse()
@@ -71,7 +71,7 @@ func setup() (*Service, error) {
 	}
 
 	if svc.mongoDbUrl == "" {
-		return nil, errors.New("mongo connection string is missing")
+		return nil, errors.New("adapters connection string is missing")
 	}
 	if svc.grpcPort == "" {
 		return nil, errors.New("grpcPort port is missing")
@@ -80,7 +80,7 @@ func setup() (*Service, error) {
 	var err error
 	svc.dbClient, err = adapters.NewMongoClient(svc.mongoDbUrl, 20)
 	if err != nil {
-		return nil, fmt.Errorf("mongo: %w", err)
+		return nil, fmt.Errorf("adapters: %w", err)
 	}
 
 	store := adapters.NewMongoStorage(svc.dbClient)
@@ -93,8 +93,8 @@ func setup() (*Service, error) {
 	svc.grpcServer = grpc.NewServer()
 
 	reflection.Register(svc.grpcServer)
-	hproto.RegisterRecipeServer(svc.grpcServer, server)
-	mongoInfi := fmt.Sprintf("mongo connection: %s", svc.mongoDbUrl)
+	hproto.RegisterRecipeSvcServer(svc.grpcServer, server)
+	mongoInfi := fmt.Sprintf("adapters connection: %s", svc.mongoDbUrl)
 	grpcInfo := fmt.Sprintf("grpc listening on port: %s", svc.grpcPort)
 	svc.log.Info().Msg(mongoInfi)
 	svc.log.Info().Msg(grpcInfo)

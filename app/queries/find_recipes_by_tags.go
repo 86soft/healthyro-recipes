@@ -11,12 +11,12 @@ type FindRecipesByTags struct {
 }
 
 type FindRecipesByTagsHandler struct {
-	findFn func(ctx context.Context, tags []core.Tag) (core.Recipe, error)
+	findFn func(ctx context.Context, tags []core.Tag) ([]core.Recipe, error)
 	logger zerolog.Logger
 }
 
 func NewFindRecipesByTagsHandler(
-	fn func(ctx context.Context, tags []core.Tag) (core.Recipe, error),
+	fn func(ctx context.Context, tags []core.Tag) ([]core.Recipe, error),
 	logger zerolog.Logger) (FindRecipesByTagsHandler, error) {
 	if fn == nil {
 		return FindRecipesByTagsHandler{}, &core.NilDependencyError{Name: "FindRecipesByTagsHandler - fn"}
@@ -25,6 +25,6 @@ func NewFindRecipesByTagsHandler(
 	return FindRecipesByTagsHandler{findFn: fn, logger: logger}, nil
 }
 
-func (h *FindRecipesByTagsHandler) Handle(ctx context.Context, query FindRecipesByTags) (core.Recipe, error) {
+func (h *FindRecipesByTagsHandler) Handle(ctx context.Context, query FindRecipesByTags) ([]core.Recipe, error) {
 	return h.findFn(ctx, query.Tags)
 }

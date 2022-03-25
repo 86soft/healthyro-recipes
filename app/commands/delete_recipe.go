@@ -23,11 +23,11 @@ func NewDeleteRecipe(id string) DeleteRecipe {
 func NewDeleteRecipeHandler(fn func(
 	ctx context.Context,
 	id d.ID[d.Recipe],
-) error, logger l.Logger) DeleteRecipeHandler {
+) error, logger l.Logger) (DeleteRecipeHandler, error) {
 	if fn == nil {
-		panic("nil deleteRecipeFn inside NewDeleteRecipeHandler")
+		return DeleteRecipeHandler{}, &d.NilDependencyError{Name: "DeleteRecipeHandler - fn"}
 	}
-	return DeleteRecipeHandler{deleteRecipeFn: fn, logger: logger}
+	return DeleteRecipeHandler{deleteRecipeFn: fn, logger: logger}, nil
 }
 func (h *DeleteRecipeHandler) Handle(ctx context.Context, cmd DeleteRecipe) error {
 	_, err := uuid.Parse(cmd.recipeID)

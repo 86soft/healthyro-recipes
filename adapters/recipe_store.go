@@ -177,7 +177,7 @@ func (m *MongoStorage) DeleteRecipe(ctx context.Context, id d.ID[d.Recipe]) erro
 	return errOrNil
 }
 
-func (m *MongoStorage) DeleteRecipeResource(ctx context.Context, recipeID d.ID[d.Recipe], resourceID d.ID[d.Resource]) error {
+func (m *MongoStorage) RemoveResourceFromRecipe(ctx context.Context, recipeID d.ID[d.Recipe], resourceID d.ID[d.Resource]) error {
 	c := m.ForCollection(CollectionRecipes)
 
 	update := bson.M{"$pull": bson.M{"resources": bson.M{"_id": resourceID.ID}}}

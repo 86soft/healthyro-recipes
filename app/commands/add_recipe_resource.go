@@ -3,6 +3,7 @@ package commands
 import (
 	"context"
 	d "github.com/86soft/healthyro-recipes/core"
+	"github.com/rs/zerolog"
 )
 
 type AddRecipeResource struct {
@@ -18,17 +19,21 @@ type AddRecipeResourceHandler struct {
 		id d.ID[d.Recipe],
 		r *d.Resource,
 	) error
+	logger zerolog.Logger
 }
 
 func NewAddRecipeResourceHandler(fn func(
 	ctx context.Context,
 	id d.ID[d.Recipe],
 	r *d.Resource,
-) error) (AddRecipeResourceHandler, error) {
+) error, logger zerolog.Logger) (AddRecipeResourceHandler, error) {
 	if fn == nil {
 		return AddRecipeResourceHandler{}, &d.NilDependencyError{Name: "AddRecipeResourceHandler - fn"}
 	}
-	return AddRecipeResourceHandler{addRecipeResource: fn}, nil
+	return AddRecipeResourceHandler{
+		addRecipeResource: fn,
+		logger:            logger,
+	}, nil
 }
 
 func (h *AddRecipeResourceHandler) Handle(ctx context.Context, cmd AddRecipeResource) error {
