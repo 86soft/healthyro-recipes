@@ -12,10 +12,10 @@ import (
 func (m *MongoStorage) CreateRecipe(ctx context.Context, recipe *d.Recipe) error {
 	createdAt := time.Now().UTC()
 
-	dbRecipeResources := make([]Resource, 0, len(recipe.Resources))
+	dbRecipeResources := make([]Resource, len(recipe.Resources))
 	mapToResources(createdAt, recipe.Resources, dbRecipeResources)
 
-	dbRecipeTags := make([]RecipeTag, 0, len(recipe.Tags))
+	dbRecipeTags := make([]RecipeTag, len(recipe.Tags))
 	mapToRecipeTags(recipe.Tags, dbRecipeTags)
 
 	dbRecipe := Recipe{
@@ -29,7 +29,7 @@ func (m *MongoStorage) CreateRecipe(ctx context.Context, recipe *d.Recipe) error
 		Tags:        dbRecipeTags,
 	}
 
-	dbTags := make([]any, 0, len(dbRecipeTags))
+	dbTags := make([]any, len(dbRecipeTags))
 	mapToTags(createdAt, recipe, recipe.Tags, dbTags)
 
 	recipesCol := m.ForCollection(CollectionRecipes)
@@ -97,8 +97,8 @@ func (m *MongoStorage) FindRecipesByName(ctx context.Context, name string) ([]d.
 		return nil, err
 	}
 
-	phrase := fmt.Sprintf("\"%s\"", name)
-	cursor, err := c.Find(ctx, bson.M{"text": bson.M{"$search": phrase}}) // should consider count, but we need pagination in future anyway
+	//phrase := fmt.Sprintf(`\"%s\"`, name)
+	cursor, err := c.Find(ctx, bson.M{"$text": bson.M{"$search": name}}) // should consider count, but we need pagination in future anyway
 	if err != nil {
 		return nil, err
 	}

@@ -31,6 +31,6 @@ func NewRemoveTagFromRecipeHandler(
 	}, nil
 }
 
-func (h *RemoveTagFromRecipeHandler) Handle(ctx context.Context, cmd AddTagToRecipe) error {
+func (h *RemoveTagFromRecipeHandler) Handle(ctx context.Context, cmd RemoveTagFromRecipe) error {
 	return h.removeTagFn(ctx, cmd.RecipeID, cmd.TagID)
 }

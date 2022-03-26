@@ -40,10 +40,10 @@ func NewCreateRecipeHandler(
 }
 
 func (h *CreateRecipeHandler) Handle(ctx context.Context, cmd CreateRecipe) (d.ID[d.Recipe], error) {
-	resources := make([]d.Resource, 0, len(cmd.Resources))
+	resources := make([]d.Resource, len(cmd.Resources))
 	cmd.mapResources(resources)
 
-	tags := make([]d.Tag, 0, len(cmd.Tags))
+	tags := make([]d.Tag, len(cmd.Tags))
 	cmd.mapTags(tags)
 
 	recipe := d.Recipe{
@@ -61,20 +61,20 @@ func (h *CreateRecipeHandler) Handle(ctx context.Context, cmd CreateRecipe) (d.I
 }
 
 func (c *CreateRecipe) mapResources(res []d.Resource) {
-	for _, r := range res {
-		res = append(res, d.Resource{
+	for i, r := range c.Resources {
+		res[i] = d.Resource{
 			ID:    d.CreateID[d.Resource](),
 			Name:  r.Name,
 			Kind:  r.Kind,
 			Value: r.Value,
-		})
+		}
 	}
 }
 
 func (c *CreateRecipe) mapTags(tags []d.Tag) {
-	for _, t := range c.Tags {
-		tags = append(tags, d.Tag{
+	for i, t := range c.Tags {
+		tags[i] = d.Tag{
 			Name: t,
-		})
+		}
 	}
 }
