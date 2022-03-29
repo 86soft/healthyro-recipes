@@ -69,10 +69,10 @@ func (m *MongoStorage) GetRecipe(ctx context.Context, id d.ID[d.Recipe]) (d.Reci
 	if err != nil {
 		return d.Recipe{}, err
 	}
-	rResources := make([]d.Resource, 0, len(dbRecipe.Resources))
+	rResources := make([]d.Resource, len(dbRecipe.Resources))
 	mapFromResources(dbRecipe.Resources, rResources)
 
-	rTags := make([]d.Tag, 0, len(dbRecipe.Tags))
+	rTags := make([]d.Tag, len(dbRecipe.Tags))
 	mapFromRecipeTags(id, dbRecipe.Tags, rTags)
 
 	return d.Recipe{
@@ -112,11 +112,7 @@ func (m *MongoStorage) FindRecipesByTags(ctx context.Context, tags []d.Tag) ([]d
 	for _, tag := range tags {
 		names = append(names, tag.Name)
 	}
-
-	query := bson.D{
-		{"tags", bson.D{{"$all", names}}},
-	}
-	cursor, errOrNil := c.Find(ctx, query)
+	cursor, errOrNil := c.Aggregate(ctx, createFindRecipesByTagsPipeline(names))
 	if errOrNil != nil {
 		return nil, errOrNil
 	}
@@ -183,4 +179,30 @@ func (m *MongoStorage) RemoveResourceFromRecipe(ctx context.Context, recipeID d.
 	update := bson.M{"$pull": bson.M{"resources": bson.M{"_id": resourceID.ID}}}
 	_, errOrNil := c.UpdateByID(ctx, recipeID.ID, update)
 	return errOrNil
+}
+
+func createFindRecipesByTagsPipeline(tagNames []string) mongo.Pipeline {
+	filterByTags := bson.D{{"tags._id", bson.M{"$in": tagNames}}}
+
+	extractSharedTagsCount := bson.D{{"$size", bson.M{"$setIntersection": bson.A{tagNames, "$tags._id"}}}}
+	addCountToDocument := bson.M{"matchedTagCount": extractSharedTagsCount}
+
+	sortByTagsRelevanceCount := bson.M{"matchedTagCount": -1}
+	removeTemporalCount := "matchedTagCount"
+	return mongo.Pipeline{match(filterByTags), addFields(addCountToDocument), sort(sortByTagsRelevanceCount), unset(removeTemporalCount)}
+}
+
+func match(input any) bson.D {
+	return bson.D{{"$match", input}}
+}
+
+func addFields(input any) bson.D {
+	return bson.D{{"$addFields", input}}
+}
+
+func sort(input any) bson.D {
+	return bson.D{{"$sort", input}}
+}
+func unset(input any) bson.D {
+	return bson.D{{"$unset", input}}
 }

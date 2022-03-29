@@ -15,7 +15,6 @@ import (
 	"google.golang.org/grpc/reflection"
 	"net"
 	"os"
-	"strings"
 	"time"
 )
 
@@ -25,6 +24,7 @@ const (
 )
 
 type Service struct {
+	isLocal    string
 	mongoDbUrl string
 	grpcPort   string
 	grpcServer *grpc.Server
@@ -55,18 +55,7 @@ func setup() (*Service, error) {
 	if *local {
 		svc.mongoDbUrl = *customConn
 		svc.grpcPort = *customGrpcPort
-
-		output := zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: time.RFC3339}
-		output.FormatLevel = func(i interface{}) string {
-			return strings.ToUpper(fmt.Sprintf("|%-6s|", i))
-		}
-		output.FormatFieldName = func(i interface{}) string {
-			return fmt.Sprintf("%s:", i)
-		}
-		output.FormatFieldValue = func(i interface{}) string {
-			return strings.ToUpper(fmt.Sprintf("%s", i))
-		}
-
+		output := zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: time.StampMilli}
 		svc.log = zerolog.New(output).With().Timestamp().Logger()
 	}
 
@@ -90,7 +79,7 @@ func setup() (*Service, error) {
 		return nil, err
 	}
 	server := ports.NewRecipeServer(newApp)
-	svc.grpcServer = grpc.NewServer()
+	svc.grpcServer = grpc.NewServer(grpc.UnaryInterceptor(UnaryLoggingInterceptor(svc.log)))
 
 	reflection.Register(svc.grpcServer)
 	hproto.RegisterRecipeSvcServer(svc.grpcServer, server)
@@ -105,6 +94,7 @@ func createDefaultSvc() Service {
 	svc := Service{}
 	svc.mongoDbUrl = os.Getenv("MONGO_URL")
 	svc.grpcPort = os.Getenv("PORT")
+	svc.isLocal = os.Getenv("LOCAL_MODE")
 	return svc
 }
 
@@ -112,4 +102,18 @@ func (s *Service) Clear() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 	return s.dbClient.Disconnect(ctx)
+}
+
+func UnaryLoggingInterceptor(logger zerolog.Logger) grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		start := time.Now().UTC()
+
+		h, err := handler(ctx, req)
+		took := time.Since(start)
+		if err != nil {
+			logger.Error().Msg(err.Error())
+		}
+		logger.Info().Msg(fmt.Sprintf("Request: %s took %v", info.FullMethod, took))
+		return h, err
+	}
 }
