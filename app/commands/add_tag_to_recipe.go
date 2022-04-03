@@ -2,6 +2,7 @@ package commands
 
 import (
 	"context"
+	"errors"
 	c "github.com/86soft/healthyro-recipes/core"
 	"github.com/rs/zerolog"
 )
@@ -13,46 +14,32 @@ type AddTagToRecipe struct {
 	CreateNewTag bool
 }
 
-type AddTagToRecipeHandler struct {
-	addRecipeTagFn func(ctx context.Context, id c.ID[c.Recipe], t *c.Tag) error
-	createTagFn    func(ctx context.Context, name string) (c.ID[c.Tag], error)
-	log            zerolog.Logger
-}
+type AddTagToRecipeHandler func(ctx context.Context, cmd AddTagToRecipe) error
 
 func NewAddTagToRecipeHandler(
-	addTag func(ctx context.Context, id c.ID[c.Recipe], t *c.Tag) error,
-	createTag func(ctx context.Context, name string) (c.ID[c.Tag], error),
+	addTagFn c.AddTagToRecipe,
+	createTagFn c.CreateTag,
 	logger zerolog.Logger,
 ) (AddTagToRecipeHandler, error) {
-	if addTag == nil {
-		return AddTagToRecipeHandler{}, &c.NilDependencyError{
-			Name: "RemoveTagFromRecipeHandler - addTag",
-		}
+	if addTagFn == nil {
+		return nil, errors.New("NewAddTagToRecipeHandler - addTagFn dependency is nil")
 	}
-	if createTag == nil {
-		return AddTagToRecipeHandler{}, &c.NilDependencyError{
-			Name: "RemoveTagFromRecipeHandler - createTag",
-		}
+	if createTagFn == nil {
+		return nil, errors.New("NewAddTagToRecipeHandler - createTagFn dependency is nil")
 	}
-	return AddTagToRecipeHandler{
-		addRecipeTagFn: addTag,
-		createTagFn:    createTag,
-		log:            logger,
+	return func(ctx context.Context, cmd AddTagToRecipe) error {
+		tag, err := getOrCreateTag(ctx, cmd, createTagFn)
+		if err != nil {
+			return err
+		}
+		return addTagFn(ctx, cmd.RecipeID, &tag)
 	}, nil
 }
 
-func (h *AddTagToRecipeHandler) Handle(ctx context.Context, cmd AddTagToRecipe) error {
-	tag, err := h.GetOrCreateTag(ctx, cmd)
-	if err != nil {
-		return err
-	}
-	return h.addRecipeTagFn(ctx, cmd.RecipeID, &tag)
-}
-
-func (h *AddTagToRecipeHandler) GetOrCreateTag(ctx context.Context, cmd AddTagToRecipe) (c.Tag, error) {
+func getOrCreateTag(ctx context.Context, cmd AddTagToRecipe, createTagFn c.CreateTag) (c.Tag, error) {
 	var err error
 	if cmd.CreateNewTag {
-		_, err = h.createTagFn(ctx, cmd.Name)
+		_, err = createTagFn(ctx, cmd.Name)
 	}
 	return c.Tag{
 		RecipeId: cmd.RecipeID,

@@ -2,6 +2,7 @@ package queries
 
 import (
 	"context"
+	"errors"
 	"github.com/86soft/healthyro-recipes/core"
 	"github.com/rs/zerolog"
 )
@@ -9,22 +10,13 @@ import (
 type ListRecipes struct {
 }
 
-func NewListRecipes() ListRecipes {
-	return ListRecipes{}
-}
+type ListRecipesHandler func(ctx context.Context) ([]core.Recipe, error)
 
-type ListRecipesHandler struct {
-	getRecipesFn func(ctx context.Context) ([]core.Recipe, error)
-	logger       zerolog.Logger
-}
-
-func NewListRecipesHandler(repo func(ctx context.Context) ([]core.Recipe, error), logger zerolog.Logger) (ListRecipesHandler, error) {
-	if repo == nil {
-		return ListRecipesHandler{}, &core.NilDependencyError{Name: "NewListRecipesHandler - repo"}
+func NewListRecipesHandler(list core.ListRecipes, logger zerolog.Logger) (ListRecipesHandler, error) {
+	if list == nil {
+		return nil, errors.New("NewListRecipesHandler - list dependency is nil")
 	}
-	return ListRecipesHandler{getRecipesFn: repo, logger: logger}, nil
-}
-
-func (h ListRecipesHandler) Handle(ctx context.Context) ([]core.Recipe, error) {
-	return h.getRecipesFn(ctx)
+	return func(ctx context.Context) ([]core.Recipe, error) {
+		return list(ctx)
+	}, nil
 }

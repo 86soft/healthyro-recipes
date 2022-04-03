@@ -7,9 +7,9 @@ import (
 )
 
 type Application struct {
-	Commands CommandHandlers
-	Queries  Queries
-	Log      zerolog.Logger
+	Commands
+	Queries
+	Log zerolog.Logger
 }
 
 func NewApplication(repo core.Store, logger zerolog.Logger) (Application, error) {
@@ -17,15 +17,10 @@ func NewApplication(repo core.Store, logger zerolog.Logger) (Application, error)
 	if err != nil {
 		return Application{}, fmt.Errorf("NewApplication: %w", err)
 	}
-
 	q, err := NewQueryHandlers(repo, logger)
 	if err != nil {
 		return Application{}, fmt.Errorf("NewApplication: %w", err)
 	}
 
-	return Application{
-		Commands: c,
-		Queries:  q,
-		Log:      logger,
-	}, nil
+	return Application{Queries: q, Commands: c, Log: logger}, nil
 }

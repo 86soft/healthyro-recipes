@@ -2,6 +2,7 @@ package commands
 
 import (
 	"context"
+	"errors"
 	d "github.com/86soft/healthyro-recipes/core"
 	"github.com/rs/zerolog"
 )
@@ -19,45 +20,35 @@ type RecipeResources struct {
 	Value string
 }
 
-type CreateRecipeHandler struct {
-	createRecipeFn func(ctx context.Context, newRecipe *d.Recipe) error
-	log            zerolog.Logger
-}
+type CreateRecipeHandler func(ctx context.Context, cmd CreateRecipe) (d.ID[d.Recipe], error)
 
 func NewCreateRecipeHandler(
-	fn func(ctx context.Context, r *d.Recipe) error,
+	createFn d.CreateRecipe,
 	logger zerolog.Logger,
 ) (CreateRecipeHandler, error) {
-	if fn == nil {
-		return CreateRecipeHandler{}, &d.NilDependencyError{
-			Name: "NewCreateRecipeHandler - fn",
+	if createFn == nil {
+		return nil, errors.New("NewCreateRecipeHandler - createFn dependency is nil")
+	}
+	return func(ctx context.Context, cmd CreateRecipe) (d.ID[d.Recipe], error) {
+		resources := make([]d.Resource, len(cmd.Resources))
+		cmd.mapResources(resources)
+
+		tags := make([]d.Tag, len(cmd.Tags))
+		cmd.mapTags(tags)
+
+		recipe := d.Recipe{
+			ID:          d.CreateID[d.Recipe](),
+			Title:       cmd.Title,
+			Description: cmd.Description,
+			Resources:   resources,
+			Tags:        tags,
 		}
-	}
-	return CreateRecipeHandler{
-		createRecipeFn: fn,
-		log:            logger,
+		err := createFn(ctx, &recipe)
+		if err != nil {
+			return d.ID[d.Recipe]{}, err
+		}
+		return recipe.ID, nil
 	}, nil
-}
-
-func (h *CreateRecipeHandler) Handle(ctx context.Context, cmd CreateRecipe) (d.ID[d.Recipe], error) {
-	resources := make([]d.Resource, len(cmd.Resources))
-	cmd.mapResources(resources)
-
-	tags := make([]d.Tag, len(cmd.Tags))
-	cmd.mapTags(tags)
-
-	recipe := d.Recipe{
-		ID:          d.CreateID[d.Recipe](),
-		Title:       cmd.Title,
-		Description: cmd.Description,
-		Resources:   resources,
-		Tags:        tags,
-	}
-	err := h.createRecipeFn(ctx, &recipe)
-	if err != nil {
-		return d.ID[d.Recipe]{}, err
-	}
-	return recipe.ID, nil
 }
 
 func (c *CreateRecipe) mapResources(res []d.Resource) {

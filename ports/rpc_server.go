@@ -41,7 +41,7 @@ func (r RecipeServer) CreateRecipe(ctx c.Context, req *p.CreateRecipeRequest) (*
 		Resources:   res,
 		Tags:        tags,
 	}
-	id, err := r.app.Commands.CreateRecipe.Handle(ctx, cmd)
+	id, err := r.app.CreateRecipe(ctx, cmd)
 	if err != nil {
 		r.app.Log.Error().Msg(err.Error())
 		return nil, err
@@ -53,7 +53,7 @@ func (r RecipeServer) CreateRecipe(ctx c.Context, req *p.CreateRecipeRequest) (*
 }
 
 func (r RecipeServer) ListRecipe(ctx c.Context, _ *p.ListRecipeRequest) (*p.ListRecipeResponse, error) {
-	recipes, err := r.app.Queries.ListRecipes.Handle(ctx)
+	recipes, err := r.app.ListRecipes(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +63,7 @@ func (r RecipeServer) ListRecipe(ctx c.Context, _ *p.ListRecipeRequest) (*p.List
 
 func (r RecipeServer) FindRecipesByName(ctx c.Context, req *p.FindRecipesByNameRequest) (*p.FindRecipesByNameResponse, error) {
 	cmd := queries.FindRecipesByName{Name: req.GetName()}
-	recipes, err := r.app.Queries.FindRecipesByName.Handle(ctx, cmd)
+	recipes, err := r.app.FindRecipesByName(ctx, cmd)
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +75,7 @@ func (r RecipeServer) GetRecipe(ctx c.Context, req *p.GetRecipeRequest) (*p.GetR
 	q := queries.GetRecipeById{
 		RecipeID: core.FromStringID[core.Recipe](req.GetRecipeId()),
 	}
-	recipe, err := r.app.Queries.GetRecipeById.Handle(ctx, q)
+	recipe, err := r.app.GetRecipeById(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +92,7 @@ func (r RecipeServer) FindRecipesByTags(ctx c.Context, req *p.FindRecipesByTagsR
 		})
 	}
 	q := queries.FindRecipesByTags{Tags: t}
-	recipes, err := r.app.Queries.FindRecipesByTags.Handle(ctx, q)
+	recipes, err := r.app.FindRecipesByTags(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +104,7 @@ func (r RecipeServer) UpdateRecipeTitle(ctx c.Context, req *p.UpdateRecipeTitleR
 		RecipeID: core.FromStringID[core.Recipe](req.GetRecipeId()),
 		Title:    req.GetTitle(),
 	}
-	return &p.UpdateRecipeTitleResponse{}, r.app.Commands.UpdateRecipeTitle.Handle(ctx, cmd)
+	return &p.UpdateRecipeTitleResponse{}, r.app.UpdateRecipeTitle(ctx, cmd)
 }
 
 func (r RecipeServer) UpdateRecipeDescription(ctx c.Context, req *p.UpdateRecipeDescriptionRequest) (*p.UpdateRecipeDescriptionResponse, error) {
@@ -112,14 +112,14 @@ func (r RecipeServer) UpdateRecipeDescription(ctx c.Context, req *p.UpdateRecipe
 		RecipeID:    core.FromStringID[core.Recipe](req.GetRecipeId()),
 		Description: req.GetDescription(),
 	}
-	return &p.UpdateRecipeDescriptionResponse{}, r.app.Commands.UpdateRecipeDescription.Handle(ctx, cmd)
+	return &p.UpdateRecipeDescriptionResponse{}, r.app.UpdateRecipeDescription(ctx, cmd)
 }
 
 func (r RecipeServer) DeleteRecipe(ctx c.Context, req *p.DeleteRecipeRequest) (*p.DeleteRecipeResponse, error) {
 	cmd := commands.DeleteRecipe{
 		RecipeID: core.FromStringID[core.Recipe](req.GetRecipeId()),
 	}
-	return &p.DeleteRecipeResponse{}, r.app.Commands.DeleteRecipe.Handle(ctx, cmd)
+	return &p.DeleteRecipeResponse{}, r.app.DeleteRecipe(ctx, cmd)
 }
 
 func (r RecipeServer) RemoveRecipeFromResource(ctx c.Context, req *p.RemoveResourceFromRecipeRequest) (*p.RemoveRecipeFromResourceResponse, error) {
@@ -127,7 +127,7 @@ func (r RecipeServer) RemoveRecipeFromResource(ctx c.Context, req *p.RemoveResou
 		RecipeID:   core.FromStringID[core.Recipe](req.GetRecipeId()),
 		ResourceID: core.FromStringID[core.Resource](req.GetResourceId()),
 	}
-	return &p.RemoveRecipeFromResourceResponse{}, r.app.Commands.RemoveResourceFromRecipe.Handle(ctx, cmd)
+	return &p.RemoveRecipeFromResourceResponse{}, r.app.RemoveResourceFromRecipe(ctx, cmd)
 }
 
 func (r RecipeServer) AddRecipeResource(ctx c.Context, req *p.AddRecipeResourceRequest) (*p.AddRecipeResourceResponse, error) {
@@ -137,12 +137,12 @@ func (r RecipeServer) AddRecipeResource(ctx c.Context, req *p.AddRecipeResourceR
 		Value:    req.GetValue(),
 		RecipeID: core.FromStringID[core.Recipe](req.GetRecipeId()),
 	}
-	return &p.AddRecipeResourceResponse{}, r.app.Commands.AddRecipeResource.Handle(ctx, cmd)
+	return &p.AddRecipeResourceResponse{}, r.app.AddRecipeResource(ctx, cmd)
 }
 
 func (r RecipeServer) CreateTag(ctx c.Context, req *p.CreateTagRequest) (*p.CreateTagResponse, error) {
 	cmd := commands.CreateTag{Name: req.GetName()}
-	id, err := r.app.Commands.CreateTag.Handle(ctx, cmd)
+	id, err := r.app.CreateTag(ctx, cmd)
 	if err != nil {
 		return nil, err
 	}
@@ -155,14 +155,14 @@ func (r RecipeServer) AddTagToRecipe(ctx c.Context, req *p.AddTagToRecipeRequest
 		RecipeID:     core.FromStringID[core.Recipe](req.GetRecipeId()),
 		CreateNewTag: req.GetCreateNewTag(),
 	}
-	return &p.AddTagToRecipeResponse{}, r.app.Commands.AddTagToRecipe.Handle(ctx, cmd)
+	return &p.AddTagToRecipeResponse{}, r.app.AddTagToRecipe(ctx, cmd)
 }
 func (r RecipeServer) RemoveTagFromRecipe(ctx c.Context, req *p.RemoveTagFromRecipeRequest) (*p.RemoveTagFromRecipeResponse, error) {
 	cmd := commands.RemoveTagFromRecipe{
 		TagID:    core.FromStringID[core.Tag](req.GetTagId()),
 		RecipeID: core.FromStringID[core.Recipe](req.GetRecipeId()),
 	}
-	return &p.RemoveTagFromRecipeResponse{}, r.app.Commands.RemoveTagFromRecipe.Handle(ctx, cmd)
+	return &p.RemoveTagFromRecipeResponse{}, r.app.RemoveTagFromRecipe(ctx, cmd)
 }
 
 func mapRecipesToResponse(recipes []core.Recipe) []*p.Recipe {

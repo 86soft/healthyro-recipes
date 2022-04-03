@@ -3,28 +3,21 @@ package queries
 import (
 	"context"
 	"github.com/86soft/healthyro-recipes/core"
+	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 )
 
 type FindRecipesByTags struct {
 	Tags []core.Tag
 }
+type FindRecipesByTagsHandler func(context.Context, FindRecipesByTags) ([]core.Recipe, error)
 
-type FindRecipesByTagsHandler struct {
-	findFn func(ctx context.Context, tags []core.Tag) ([]core.Recipe, error)
-	logger zerolog.Logger
-}
-
-func NewFindRecipesByTagsHandler(
-	fn func(ctx context.Context, tags []core.Tag) ([]core.Recipe, error),
-	logger zerolog.Logger) (FindRecipesByTagsHandler, error) {
-	if fn == nil {
-		return FindRecipesByTagsHandler{}, &core.NilDependencyError{Name: "FindRecipesByTagsHandler - fn"}
+func NewFindRecipesByTagsHandler(findFn core.FindRecipesByTags, logger zerolog.Logger) (FindRecipesByTagsHandler, error) {
+	if findFn == nil {
+		return nil, errors.New("NewFindRecipesByTags implementation is nil")
 	}
 
-	return FindRecipesByTagsHandler{findFn: fn, logger: logger}, nil
-}
-
-func (h *FindRecipesByTagsHandler) Handle(ctx context.Context, query FindRecipesByTags) ([]core.Recipe, error) {
-	return h.findFn(ctx, query.Tags)
+	return func(ctx context.Context, cmd FindRecipesByTags) ([]core.Recipe, error) {
+		return findFn(ctx, cmd.Tags)
+	}, nil
 }

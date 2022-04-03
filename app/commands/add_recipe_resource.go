@@ -2,6 +2,7 @@ package commands
 
 import (
 	"context"
+	"errors"
 	d "github.com/86soft/healthyro-recipes/core"
 	"github.com/rs/zerolog"
 )
@@ -13,35 +14,19 @@ type AddRecipeResource struct {
 	RecipeID d.ID[d.Recipe]
 }
 
-type AddRecipeResourceHandler struct {
-	addRecipeResource func(
-		ctx context.Context,
-		id d.ID[d.Recipe],
-		r *d.Resource,
-	) error
-	logger zerolog.Logger
-}
+type AddRecipeResourceHandler func(ctx context.Context, cmd AddRecipeResource) error
 
-func NewAddRecipeResourceHandler(fn func(
-	ctx context.Context,
-	id d.ID[d.Recipe],
-	r *d.Resource,
-) error, logger zerolog.Logger) (AddRecipeResourceHandler, error) {
-	if fn == nil {
-		return AddRecipeResourceHandler{}, &d.NilDependencyError{Name: "AddRecipeResourceHandler - fn"}
+func NewAddRecipeResourceHandler(add d.AddRecipeResource, logger zerolog.Logger) (AddRecipeResourceHandler, error) {
+	if add == nil {
+		return nil, errors.New("NewAddRecipeResourceHandler - add dependency is nil")
 	}
-	return AddRecipeResourceHandler{
-		addRecipeResource: fn,
-		logger:            logger,
+	return func(ctx context.Context, cmd AddRecipeResource) error {
+		r := d.Resource{
+			ID:    d.CreateID[d.Resource](),
+			Name:  cmd.Name,
+			Kind:  cmd.Kind,
+			Value: cmd.Value,
+		}
+		return add(ctx, cmd.RecipeID, &r)
 	}, nil
-}
-
-func (h *AddRecipeResourceHandler) Handle(ctx context.Context, cmd AddRecipeResource) error {
-	r := d.Resource{
-		ID:    d.CreateID[d.Resource](),
-		Name:  cmd.Name,
-		Kind:  cmd.Kind,
-		Value: cmd.Value,
-	}
-	return h.addRecipeResource(ctx, cmd.RecipeID, &r)
 }

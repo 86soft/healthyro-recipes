@@ -2,6 +2,7 @@ package commands
 
 import (
 	"context"
+	"errors"
 	c "github.com/86soft/healthyro-recipes/core"
 	"github.com/rs/zerolog"
 )
@@ -11,26 +12,16 @@ type RemoveTagFromRecipe struct {
 	RecipeID c.ID[c.Recipe]
 }
 
-type RemoveTagFromRecipeHandler struct {
-	removeTagFn func(ctx context.Context, recipeID c.ID[c.Recipe], tagID c.ID[c.Tag]) error
-	log         zerolog.Logger
-}
+type RemoveTagFromRecipeHandler func(ctx context.Context, cmd RemoveTagFromRecipe) error
 
 func NewRemoveTagFromRecipeHandler(
-	removeTag func(ctx context.Context, recipeID c.ID[c.Recipe], tagID c.ID[c.Tag]) error,
+	removeTagFn c.RemoveTagFromRecipe,
 	logger zerolog.Logger,
 ) (RemoveTagFromRecipeHandler, error) {
-	if removeTag == nil {
-		return RemoveTagFromRecipeHandler{}, &c.NilDependencyError{
-			Name: "RemoveTagFromRecipeHandler - createTagFn",
-		}
+	if removeTagFn == nil {
+		return nil, errors.New("NewRemoveTagFromRecipeHandler - removeTagFn dependency is nil")
 	}
-	return RemoveTagFromRecipeHandler{
-		removeTagFn: removeTag,
-		log:         logger,
+	return func(ctx context.Context, cmd RemoveTagFromRecipe) error {
+		return removeTagFn(ctx, cmd.RecipeID, cmd.TagID)
 	}, nil
-}
-
-func (h *RemoveTagFromRecipeHandler) Handle(ctx context.Context, cmd RemoveTagFromRecipe) error {
-	return h.removeTagFn(ctx, cmd.RecipeID, cmd.TagID)
 }

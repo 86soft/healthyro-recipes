@@ -139,10 +139,7 @@ func (m *MongoStorage) UpdateRecipeTitle(ctx context.Context, id d.ID[d.Recipe],
 	}
 
 	if res.ModifiedCount != 1 {
-		return &d.OnDBUpdateError{
-			ID:      id.ID,
-			Details: fmt.Sprintf("ModifiedCount is different than 1, count: %v", res.ModifiedCount),
-		}
+		return fmt.Errorf("recipe id: %s - ModifiedCount is %v, expected 1", id.ID, res.ModifiedCount)
 	}
 
 	return nil
@@ -158,10 +155,7 @@ func (m *MongoStorage) UpdateRecipeDescription(ctx context.Context, id d.ID[d.Re
 	}
 
 	if res.ModifiedCount != 1 {
-		return &d.OnDBUpdateError{
-			ID:      id.ID,
-			Details: fmt.Sprintf("ModifiedCount is different than 1, count: %v", res.ModifiedCount),
-		}
+		return fmt.Errorf("recipe id: %s - ModifiedCount is %v, expected 1", id.ID, res.ModifiedCount)
 	}
 
 	return nil

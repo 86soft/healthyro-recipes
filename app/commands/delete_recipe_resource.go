@@ -2,6 +2,7 @@ package commands
 
 import (
 	"context"
+	"errors"
 	d "github.com/86soft/healthyro-recipes/core"
 	l "github.com/rs/zerolog"
 )
@@ -11,30 +12,16 @@ type RemoveResourceFromRecipe struct {
 	ResourceID d.ID[d.Resource]
 }
 
-type RemoveResourceFromRecipeHandler struct {
-	removeRecipeResource func(
-		ctx context.Context,
-		recipeID d.ID[d.Recipe],
-		resourceID d.ID[d.Resource]) error
-	log l.Logger
-}
+type RemoveResourceFromRecipeHandler func(ctx context.Context, cmd RemoveResourceFromRecipe) error
 
 func NewRemoveResourceFromRecipeHandler(
-	fn func(
-		ctx context.Context,
-		recipeID d.ID[d.Recipe],
-		resourceID d.ID[d.Resource]) error,
+	removeResourceFn d.RemoveResourceFromRecipe,
 	logger l.Logger,
 ) (RemoveResourceFromRecipeHandler, error) {
-	if fn == nil {
-		return RemoveResourceFromRecipeHandler{}, &d.NilDependencyError{Name: "RemoveResourceFromRecipe"}
+	if removeResourceFn == nil {
+		return nil, errors.New("NewRemoveResourceFromRecipeHandler - removeResourceFn dependency is nil")
 	}
-	return RemoveResourceFromRecipeHandler{
-		removeRecipeResource: fn,
-		log:                  logger,
+	return func(ctx context.Context, cmd RemoveResourceFromRecipe) error {
+		return removeResourceFn(ctx, cmd.RecipeID, cmd.ResourceID)
 	}, nil
-}
-
-func (h *RemoveResourceFromRecipeHandler) Handle(ctx context.Context, cmd RemoveResourceFromRecipe) error {
-	return h.removeRecipeResource(ctx, cmd.RecipeID, cmd.ResourceID)
 }

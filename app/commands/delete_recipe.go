@@ -2,6 +2,7 @@ package commands
 
 import (
 	"context"
+	"errors"
 	d "github.com/86soft/healthyro-recipes/core"
 	l "github.com/rs/zerolog"
 )
@@ -10,20 +11,13 @@ type DeleteRecipe struct {
 	RecipeID d.ID[d.Recipe]
 }
 
-type DeleteRecipeHandler struct {
-	deleteRecipeFn func(ctx context.Context, id d.ID[d.Recipe]) error
-	logger         l.Logger
-}
+type DeleteRecipeHandler func(ctx context.Context, cmd DeleteRecipe) error
 
-func NewDeleteRecipeHandler(fn func(
-	ctx context.Context,
-	id d.ID[d.Recipe],
-) error, logger l.Logger) (DeleteRecipeHandler, error) {
-	if fn == nil {
-		return DeleteRecipeHandler{}, &d.NilDependencyError{Name: "DeleteRecipeHandler - fn"}
+func NewDeleteRecipeHandler(deleteFn d.DeleteRecipe, logger l.Logger) (DeleteRecipeHandler, error) {
+	if deleteFn == nil {
+		return nil, errors.New("NewDeleteRecipeHandler - deleteFn dependency is nil")
 	}
-	return DeleteRecipeHandler{deleteRecipeFn: fn, logger: logger}, nil
-}
-func (h *DeleteRecipeHandler) Handle(ctx context.Context, cmd DeleteRecipe) error {
-	return h.deleteRecipeFn(ctx, cmd.RecipeID)
+	return func(ctx context.Context, cmd DeleteRecipe) error {
+		return deleteFn(ctx, cmd.RecipeID)
+	}, nil
 }

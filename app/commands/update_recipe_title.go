@@ -2,6 +2,7 @@ package commands
 
 import (
 	"context"
+	"errors"
 	c "github.com/86soft/healthyro-recipes/core"
 	"github.com/rs/zerolog"
 )
@@ -11,28 +12,17 @@ type UpdateRecipeTitle struct {
 	Title    string
 }
 
-type UpdateRecipeTitleHandler struct {
-	updateRecipeFn func(ctx context.Context, id c.ID[c.Recipe], title string) error
-	logger         zerolog.Logger
-}
+type UpdateRecipeTitleHandler func(ctx context.Context, cmd UpdateRecipeTitle) error
 
-func NewUpdateRecipeTitleHandler(
-	fn func(ctx context.Context, id c.ID[c.Recipe], title string) error,
-	logger zerolog.Logger,
-) (UpdateRecipeTitleHandler, error) {
-	if fn == nil {
-		return UpdateRecipeTitleHandler{}, &c.NilDependencyError{Name: "NewUpdateRecipeTitleHandler - fn"}
+func NewUpdateRecipeTitleHandler(updateFn c.UpdateRecipeTitle, logger zerolog.Logger) (UpdateRecipeTitleHandler, error) {
+	if updateFn == nil {
+		return nil, errors.New("NewUpdateRecipeTitleHandler - updateFn dependency is nil")
 	}
 
-	return UpdateRecipeTitleHandler{
-		updateRecipeFn: fn,
-		logger:         logger,
+	return func(ctx context.Context, cmd UpdateRecipeTitle) error {
+		if len(cmd.Title) > c.TitleLengthLimit {
+			return c.ErrLengthLimitExceeded
+		}
+		return updateFn(ctx, cmd.RecipeID, cmd.Title)
 	}, nil
-}
-
-func (h *UpdateRecipeTitleHandler) Handle(ctx context.Context, cmd UpdateRecipeTitle) error {
-	if len(cmd.Title) > c.TitleLengthLimit {
-		return c.ErrLengthLimitExceeded
-	}
-	return h.updateRecipeFn(ctx, cmd.RecipeID, cmd.Title)
 }
