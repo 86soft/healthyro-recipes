@@ -22,14 +22,18 @@ type (
 	RemoveResourceFromRecipe func(ctx c.Context, recipeID ID[Recipe], resourceID ID[Resource]) error
 	AddRecipeResource        func(ctx c.Context, id ID[Recipe], r *Resource) error
 	CreateTag                func(ctx c.Context, name string) (ID[Tag], error)
+	CreateTags               func(ctx c.Context, tags []Tag) error
 	AddTagToRecipe           func(ctx c.Context, id ID[Recipe], t *Tag) error
 	RemoveTagFromRecipe      func(ctx c.Context, recipeID ID[Recipe], tagID ID[Tag]) error
+	FindRecipesByNameAndTags func(ctx c.Context, name string, tags []Tag) ([]Recipe, error)
+	AddRecipeToTags          func(ctx c.Context, id ID[Recipe], tags []Tag) error
 )
 
 type RecipeStore interface {
 	ListRecipes(ctx c.Context) ([]Recipe, error)
 	FindRecipesByName(ctx c.Context, name string) ([]Recipe, error)
 	FindRecipesByTags(ctx c.Context, tags []Tag) ([]Recipe, error)
+	FindRecipesByNameAndTags(ctx c.Context, name string, tags []Tag) ([]Recipe, error)
 	GetRecipe(ctx c.Context, id ID[Recipe]) (Recipe, error)
 	CreateRecipe(ctx c.Context, r *Recipe) error
 	UpdateRecipeTitle(ctx c.Context, id ID[Recipe], title string) error
@@ -44,6 +48,8 @@ type ResourceStore interface {
 
 type TagStore interface {
 	CreateTag(ctx c.Context, name string) (ID[Tag], error)
+	CreateTags(ctx c.Context, tags []Tag) error
 	AddTagToRecipe(ctx c.Context, id ID[Recipe], t *Tag) error
+	AddRecipeToTags(ctx c.Context, id ID[Recipe], tags []Tag) error
 	RemoveTagFromRecipe(ctx c.Context, recipeID ID[Recipe], tagID ID[Tag]) error
 }

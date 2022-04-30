@@ -7,10 +7,11 @@ import (
 )
 
 type Queries struct {
-	GetRecipeById     queries.GetRecipeByIdHandler
-	ListRecipes       queries.ListRecipesHandler
-	FindRecipesByName queries.FindRecipesByNameHandler
-	FindRecipesByTags queries.FindRecipesByTagsHandler
+	GetRecipeById            queries.GetRecipeByIdHandler
+	ListRecipes              queries.ListRecipesHandler
+	FindRecipesByName        queries.FindRecipesByNameHandler
+	FindRecipesByTags        queries.FindRecipesByTagsHandler
+	FindRecipesByNameAndTags queries.FindRecipesByNameAndTagsHandler
 }
 
 func NewQueryHandlers(repo core.Store, logger zerolog.Logger) (Queries, error) {
@@ -26,14 +27,20 @@ func NewQueryHandlers(repo core.Store, logger zerolog.Logger) (Queries, error) {
 	if err != nil {
 		return Queries{}, err
 	}
-	findRecipesByTag, err := queries.NewFindRecipesByTagsHandler(repo.FindRecipesByTags, logger)
+	findRecipesByTags, err := queries.NewFindRecipesByTagsHandler(repo.FindRecipesByTags, logger)
 	if err != nil {
 		return Queries{}, err
 	}
+	findRecipesByNameAndTags, err := queries.NewFindRecipesByNameAndTagsHandler(repo.FindRecipesByNameAndTags, logger)
+	if err != nil {
+		return Queries{}, err
+	}
+
 	return Queries{
-		GetRecipeById:     getRecipe,
-		ListRecipes:       listRecipes,
-		FindRecipesByName: findRecipesByName,
-		FindRecipesByTags: findRecipesByTag,
+		GetRecipeById:            getRecipe,
+		ListRecipes:              listRecipes,
+		FindRecipesByName:        findRecipesByName,
+		FindRecipesByTags:        findRecipesByTags,
+		FindRecipesByNameAndTags: findRecipesByNameAndTags,
 	}, nil
 }

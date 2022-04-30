@@ -18,11 +18,14 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type RecipeSvcClient interface {
+	// Read
 	ListRecipe(ctx context.Context, in *ListRecipeRequest, opts ...grpc.CallOption) (*ListRecipeResponse, error)
 	FindRecipesByName(ctx context.Context, in *FindRecipesByNameRequest, opts ...grpc.CallOption) (*FindRecipesByNameResponse, error)
 	GetRecipe(ctx context.Context, in *GetRecipeRequest, opts ...grpc.CallOption) (*GetRecipeResponse, error)
-	CreateRecipe(ctx context.Context, in *CreateRecipeRequest, opts ...grpc.CallOption) (*CreateRecipeResponse, error)
 	FindRecipesByTags(ctx context.Context, in *FindRecipesByTagsRequest, opts ...grpc.CallOption) (*FindRecipesByTagsResponse, error)
+	FindRecipesByNameAndTags(ctx context.Context, in *FindRecipesByNameAndTagsRequest, opts ...grpc.CallOption) (*FindRecipesByNameAndTagsResponse, error)
+	// Write
+	CreateRecipe(ctx context.Context, in *CreateRecipeRequest, opts ...grpc.CallOption) (*CreateRecipeResponse, error)
 	UpdateRecipeTitle(ctx context.Context, in *UpdateRecipeTitleRequest, opts ...grpc.CallOption) (*UpdateRecipeTitleResponse, error)
 	UpdateRecipeDescription(ctx context.Context, in *UpdateRecipeDescriptionRequest, opts ...grpc.CallOption) (*UpdateRecipeDescriptionResponse, error)
 	DeleteRecipe(ctx context.Context, in *DeleteRecipeRequest, opts ...grpc.CallOption) (*DeleteRecipeResponse, error)
@@ -68,18 +71,27 @@ func (c *recipeSvcClient) GetRecipe(ctx context.Context, in *GetRecipeRequest, o
 	return out, nil
 }
 
-func (c *recipeSvcClient) CreateRecipe(ctx context.Context, in *CreateRecipeRequest, opts ...grpc.CallOption) (*CreateRecipeResponse, error) {
-	out := new(CreateRecipeResponse)
-	err := c.cc.Invoke(ctx, "/RecipeSvc/CreateRecipe", in, out, opts...)
+func (c *recipeSvcClient) FindRecipesByTags(ctx context.Context, in *FindRecipesByTagsRequest, opts ...grpc.CallOption) (*FindRecipesByTagsResponse, error) {
+	out := new(FindRecipesByTagsResponse)
+	err := c.cc.Invoke(ctx, "/RecipeSvc/FindRecipesByTags", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *recipeSvcClient) FindRecipesByTags(ctx context.Context, in *FindRecipesByTagsRequest, opts ...grpc.CallOption) (*FindRecipesByTagsResponse, error) {
-	out := new(FindRecipesByTagsResponse)
-	err := c.cc.Invoke(ctx, "/RecipeSvc/FindRecipesByTags", in, out, opts...)
+func (c *recipeSvcClient) FindRecipesByNameAndTags(ctx context.Context, in *FindRecipesByNameAndTagsRequest, opts ...grpc.CallOption) (*FindRecipesByNameAndTagsResponse, error) {
+	out := new(FindRecipesByNameAndTagsResponse)
+	err := c.cc.Invoke(ctx, "/RecipeSvc/FindRecipesByNameAndTags", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *recipeSvcClient) CreateRecipe(ctx context.Context, in *CreateRecipeRequest, opts ...grpc.CallOption) (*CreateRecipeResponse, error) {
+	out := new(CreateRecipeResponse)
+	err := c.cc.Invoke(ctx, "/RecipeSvc/CreateRecipe", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -162,11 +174,14 @@ func (c *recipeSvcClient) RemoveTagFromRecipe(ctx context.Context, in *RemoveTag
 // All implementations must embed UnimplementedRecipeSvcServer
 // for forward compatibility
 type RecipeSvcServer interface {
+	// Read
 	ListRecipe(context.Context, *ListRecipeRequest) (*ListRecipeResponse, error)
 	FindRecipesByName(context.Context, *FindRecipesByNameRequest) (*FindRecipesByNameResponse, error)
 	GetRecipe(context.Context, *GetRecipeRequest) (*GetRecipeResponse, error)
-	CreateRecipe(context.Context, *CreateRecipeRequest) (*CreateRecipeResponse, error)
 	FindRecipesByTags(context.Context, *FindRecipesByTagsRequest) (*FindRecipesByTagsResponse, error)
+	FindRecipesByNameAndTags(context.Context, *FindRecipesByNameAndTagsRequest) (*FindRecipesByNameAndTagsResponse, error)
+	// Write
+	CreateRecipe(context.Context, *CreateRecipeRequest) (*CreateRecipeResponse, error)
 	UpdateRecipeTitle(context.Context, *UpdateRecipeTitleRequest) (*UpdateRecipeTitleResponse, error)
 	UpdateRecipeDescription(context.Context, *UpdateRecipeDescriptionRequest) (*UpdateRecipeDescriptionResponse, error)
 	DeleteRecipe(context.Context, *DeleteRecipeRequest) (*DeleteRecipeResponse, error)
@@ -191,11 +206,14 @@ func (UnimplementedRecipeSvcServer) FindRecipesByName(context.Context, *FindReci
 func (UnimplementedRecipeSvcServer) GetRecipe(context.Context, *GetRecipeRequest) (*GetRecipeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRecipe not implemented")
 }
-func (UnimplementedRecipeSvcServer) CreateRecipe(context.Context, *CreateRecipeRequest) (*CreateRecipeResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CreateRecipe not implemented")
-}
 func (UnimplementedRecipeSvcServer) FindRecipesByTags(context.Context, *FindRecipesByTagsRequest) (*FindRecipesByTagsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FindRecipesByTags not implemented")
+}
+func (UnimplementedRecipeSvcServer) FindRecipesByNameAndTags(context.Context, *FindRecipesByNameAndTagsRequest) (*FindRecipesByNameAndTagsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FindRecipesByNameAndTags not implemented")
+}
+func (UnimplementedRecipeSvcServer) CreateRecipe(context.Context, *CreateRecipeRequest) (*CreateRecipeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateRecipe not implemented")
 }
 func (UnimplementedRecipeSvcServer) UpdateRecipeTitle(context.Context, *UpdateRecipeTitleRequest) (*UpdateRecipeTitleResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateRecipeTitle not implemented")
@@ -288,24 +306,6 @@ func _RecipeSvc_GetRecipe_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RecipeSvc_CreateRecipe_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateRecipeRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(RecipeSvcServer).CreateRecipe(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/RecipeSvc/CreateRecipe",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RecipeSvcServer).CreateRecipe(ctx, req.(*CreateRecipeRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _RecipeSvc_FindRecipesByTags_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(FindRecipesByTagsRequest)
 	if err := dec(in); err != nil {
@@ -320,6 +320,42 @@ func _RecipeSvc_FindRecipesByTags_Handler(srv interface{}, ctx context.Context, 
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(RecipeSvcServer).FindRecipesByTags(ctx, req.(*FindRecipesByTagsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RecipeSvc_FindRecipesByNameAndTags_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FindRecipesByNameAndTagsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RecipeSvcServer).FindRecipesByNameAndTags(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/RecipeSvc/FindRecipesByNameAndTags",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RecipeSvcServer).FindRecipesByNameAndTags(ctx, req.(*FindRecipesByNameAndTagsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RecipeSvc_CreateRecipe_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateRecipeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RecipeSvcServer).CreateRecipe(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/RecipeSvc/CreateRecipe",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RecipeSvcServer).CreateRecipe(ctx, req.(*CreateRecipeRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -488,12 +524,16 @@ var RecipeSvc_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _RecipeSvc_GetRecipe_Handler,
 		},
 		{
-			MethodName: "CreateRecipe",
-			Handler:    _RecipeSvc_CreateRecipe_Handler,
-		},
-		{
 			MethodName: "FindRecipesByTags",
 			Handler:    _RecipeSvc_FindRecipesByTags_Handler,
+		},
+		{
+			MethodName: "FindRecipesByNameAndTags",
+			Handler:    _RecipeSvc_FindRecipesByNameAndTags_Handler,
+		},
+		{
+			MethodName: "CreateRecipe",
+			Handler:    _RecipeSvc_CreateRecipe_Handler,
 		},
 		{
 			MethodName: "UpdateRecipeTitle",

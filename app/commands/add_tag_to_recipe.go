@@ -42,7 +42,6 @@ func getOrCreateTag(ctx context.Context, cmd AddTagToRecipe, createTagFn c.Creat
 		_, err = createTagFn(ctx, cmd.Name)
 	}
 	return c.Tag{
-		RecipeId: cmd.RecipeID,
-		Name:     cmd.Name,
+		Name: cmd.Name,
 	}, err
 }

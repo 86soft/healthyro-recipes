@@ -12,6 +12,8 @@ import (
 	"github.com/rs/zerolog"
 	"go.mongodb.org/mongo-driver/mongo"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/health"
+	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/reflection"
 	"net"
 	"os"
@@ -23,85 +25,121 @@ const (
 	ServiceVersion = "v0.0.1"
 )
 
-type Service struct {
-	isLocal    string
-	mongoDbUrl string
-	grpcPort   string
-	grpcServer *grpc.Server
-	dbClient   *mongo.Client
-	log        zerolog.Logger
-}
+type Empty struct{}
 
-func (s *Service) Run() error {
-	lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%s", s.grpcPort))
-	if err != nil {
-		return fmt.Errorf("failed to listen: %w", err)
-	}
-	return s.grpcServer.Serve(lis)
+var (
+	_dbURL           = flag.String("conn", "", "database connection string")
+	_serviceURL      = flag.String("url", "", "grpc server url")
+	_developmentMode = flag.Bool("dev", false, "flag for development features")
+)
+
+type Service struct {
+	serverURL string
+	dbDriver  *mongo.Client
+	server    *grpc.Server
+	logger    zerolog.Logger
 }
 
 func setup() (*Service, error) {
-	// TODO: once the is a stable mvp, refactor this so it is not that ugly
-	svc := createDefaultSvc()
-	local := flag.Bool("local", false,
-		"determines if service is running locally, if so it needs passed arguments")
-
-	customConn := flag.String("conn", "", "adapters database connection string")
-	customGrpcPort := flag.String("grpcPort", "", "grpc server port")
-
 	flag.Parse()
-
-	svc.log = zerolog.New(os.Stdout)
-	if *local {
-		svc.mongoDbUrl = *customConn
-		svc.grpcPort = *customGrpcPort
-		output := zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: time.StampMilli}
-		svc.log = zerolog.New(output).With().Timestamp().Logger()
+	fetchEnvVariables()
+	err := validateEnvVariables()
+	if err != nil {
+		return nil, fmt.Errorf("validateEnvVariables: %w", err)
 	}
 
-	if svc.mongoDbUrl == "" {
-		return nil, errors.New("adapters connection string is missing")
-	}
-	if svc.grpcPort == "" {
-		return nil, errors.New("grpcPort port is missing")
+	svc, err := newService(
+		WithMongoDBClient(*_dbURL),
+		WithServerURL(*_serviceURL),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("newService: %w", err)
 	}
 
+	return svc, nil
+}
+
+func (s *Service) Run() chan error {
+	result := make(chan error)
+	go func() {
+		defer close(result)
+
+		s.logger.Info().Msgf("starting %s", ServiceName)
+		s.logger.Info().Msgf("version %s", ServiceVersion)
+
+		if *_developmentMode {
+			s.logger.Info().Msgf("~~DEVELOPMENT MODE~~")
+		}
+
+		s.logger.Info().Msgf("url: %s", s.serverURL)
+
+		lis, err := net.Listen("tcp", fmt.Sprintf(s.serverURL))
+		if err != nil {
+			result <- fmt.Errorf("listen: %w", err)
+			return
+		}
+		s.logger.Info().Msg("working...")
+		result <- s.server.Serve(lis)
+		return
+	}()
+	return result
+}
+
+func newService(args ...func(*Service) error) (*Service, error) {
 	var err error
-	svc.dbClient, err = adapters.NewMongoClient(svc.mongoDbUrl, 20)
-	if err != nil {
-		return nil, fmt.Errorf("adapters: %w", err)
+	svc := Service{}
+
+	for _, arg := range args {
+		if err := arg(&svc); err != nil {
+			return nil, fmt.Errorf("args: %w", err)
+		}
 	}
 
-	store := adapters.NewMongoStorage(svc.dbClient)
-	newApp, err := app.NewApplication(store, svc.log)
+	svc.logger = zerolog.New(os.Stdout)
+	store := adapters.NewMongoStorage(svc.dbDriver)
+
+	newApp, err := app.NewApplication(store, svc.logger)
 	if err != nil {
-		svc.log.Err(err)
+		svc.logger.Err(err)
 		return nil, err
 	}
-	server := ports.NewRecipeServer(newApp)
-	svc.grpcServer = grpc.NewServer(grpc.UnaryInterceptor(UnaryLoggingInterceptor(svc.log)))
 
-	reflection.Register(svc.grpcServer)
-	hproto.RegisterRecipeSvcServer(svc.grpcServer, server)
-	mongoInfi := fmt.Sprintf("adapters connection: %s", svc.mongoDbUrl)
-	grpcInfo := fmt.Sprintf("grpc listening on port: %s", svc.grpcPort)
-	svc.log.Info().Msg(mongoInfi)
-	svc.log.Info().Msg(grpcInfo)
+	a := ports.NewRecipeServer(newApp)
+
+	var server *grpc.Server
+	server = grpc.NewServer()
+
+	if *_developmentMode {
+		server = grpc.NewServer(grpc.UnaryInterceptor(UnaryLoggingInterceptor(svc.logger)))
+	}
+	grpc_health_v1.RegisterHealthServer(server, health.NewServer())
+	reflection.Register(server)
+	hproto.RegisterRecipeSvcServer(server, a)
+	svc.server = server
 	return &svc, nil
 }
 
-func createDefaultSvc() Service {
-	svc := Service{}
-	svc.mongoDbUrl = os.Getenv("MONGO_URL")
-	svc.grpcPort = os.Getenv("PORT")
-	svc.isLocal = os.Getenv("LOCAL_MODE")
-	return svc
-}
-
-func (s *Service) Clear() error {
+func (s *Service) Stop() error {
+	s.logger.Warn().Msgf("%s graceful shutdown", ServiceName)
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
-	return s.dbClient.Disconnect(ctx)
+	err := s.dbDriver.Disconnect(ctx)
+	if err != nil {
+		return fmt.Errorf("dbDriver: %w", err)
+	}
+
+	stopSignal := make(chan Empty)
+	go func() {
+		s.server.GracefulStop()
+		stopSignal <- Empty{}
+	}()
+
+	select {
+	case <-stopSignal:
+		return nil
+	case <-time.After(15 * time.Second):
+		return errors.New("GracefulStop took more than 15 seconds, timeout")
+	}
 }
 
 func UnaryLoggingInterceptor(logger zerolog.Logger) grpc.UnaryServerInterceptor {
@@ -116,4 +154,47 @@ func UnaryLoggingInterceptor(logger zerolog.Logger) grpc.UnaryServerInterceptor 
 		logger.Info().Msg(fmt.Sprintf("Request: %s took %v", info.FullMethod, took))
 		return h, err
 	}
+}
+
+func WithMongoDBClient(url string) func(*Service) error {
+	return func(svc *Service) error {
+		if url == "" {
+			return errors.New("db url is empty")
+		}
+		var err error
+		svc.dbDriver, err = adapters.NewMongoClient(url, 20)
+		return err
+	}
+}
+
+func WithServerURL(url string) func(*Service) error {
+	return func(svc *Service) error {
+		if url == "" {
+			return errors.New("server url is empty")
+		}
+		var err error
+		svc.serverURL = url
+		return err
+	}
+}
+
+func fetchEnvVariables() {
+	if *_serviceURL == "" {
+		*_serviceURL = os.Getenv("DB_URL")
+	}
+
+	if *_dbURL == "" {
+		*_dbURL = os.Getenv("URL")
+	}
+}
+
+func validateEnvVariables() error {
+	if *_serviceURL == "" {
+		return errors.New("_serviceURL is empty")
+	}
+
+	if *_dbURL == "" {
+		return errors.New("_dbURL is empty")
+	}
+	return nil
 }

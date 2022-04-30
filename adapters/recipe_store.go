@@ -3,26 +3,26 @@ package adapters
 import (
 	"context"
 	"fmt"
-	d "github.com/86soft/healthyro-recipes/core"
+	core "github.com/86soft/healthyro-recipes/core"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"time"
 )
 
-func (m *MongoStorage) CreateRecipe(ctx context.Context, recipe *d.Recipe) error {
+func (m *MongoStorage) CreateRecipe(ctx context.Context, recipe *core.Recipe) error {
 	createdAt := time.Now().UTC()
 
 	dbRecipeResources := make([]Resource, len(recipe.Resources))
 	mapToResources(createdAt, recipe.Resources, dbRecipeResources)
 
-	dbRecipeTags := make([]RecipeTag, len(recipe.Tags))
+	dbRecipeTags := make([]string, len(recipe.Tags))
 	mapToRecipeTags(recipe.Tags, dbRecipeTags)
 
 	dbRecipe := Recipe{
 		Document: Document{
 			CreatedAt: createdAt,
 		},
-		ID:          recipe.ID.ID,
+		ID:          recipe.ID.Value.String(),
 		Title:       recipe.Title,
 		Description: recipe.Description,
 		Resources:   dbRecipeResources,
@@ -33,49 +33,48 @@ func (m *MongoStorage) CreateRecipe(ctx context.Context, recipe *d.Recipe) error
 	mapToTags(createdAt, recipe, recipe.Tags, dbTags)
 
 	recipesCol := m.ForCollection(CollectionRecipes)
-	tagsCol := m.ForCollection(CollectionTags)
 
 	_, errOrNil := recipesCol.InsertOne(ctx, dbRecipe)
 	if errOrNil != nil {
 		return errOrNil
 	}
-	_, errOrNil = tagsCol.InsertMany(ctx, dbTags)
 	return errOrNil
 }
 
-func (m *MongoStorage) AddRecipeResource(ctx context.Context, id d.ID[d.Recipe], r *d.Resource) error {
+func (m *MongoStorage) AddRecipeResource(ctx context.Context, id core.ID[core.Recipe], r *core.Resource) error {
 	createdAt := time.Now().UTC()
 	recipeColl := m.ForCollection(CollectionRecipes)
 
 	update := bson.M{"$push": bson.M{"resources": Resource{
 		Document: Document{CreatedAt: createdAt},
-		ID:       r.ID.ID,
+		ID:       r.ID.Value.String(),
 		Name:     r.Name,
 		Kind:     r.Kind,
 		Value:    r.Value,
 	}}}
-	_, errOrNil := recipeColl.UpdateByID(ctx, id.ID, update)
+	_, errOrNil := recipeColl.UpdateByID(ctx, id.Value, update)
 	if errOrNil != nil {
 		return errOrNil
 	}
 	return errOrNil
 }
 
-func (m *MongoStorage) GetRecipe(ctx context.Context, id d.ID[d.Recipe]) (d.Recipe, error) {
+func (m *MongoStorage) GetRecipe(ctx context.Context, id core.ID[core.Recipe]) (core.Recipe, error) {
 	c := m.ForCollection(CollectionRecipes)
 
 	dbRecipe := Recipe{}
-	err := c.FindOne(ctx, bson.D{{"_id", id.ID}}).Decode(&dbRecipe)
+
+	err := c.FindOne(ctx, bson.D{{"_id", id.Value}}).Decode(&dbRecipe)
 	if err != nil {
-		return d.Recipe{}, err
+		return core.Recipe{}, err
 	}
-	rResources := make([]d.Resource, len(dbRecipe.Resources))
+	rResources := make([]core.Resource, len(dbRecipe.Resources))
 	mapFromResources(dbRecipe.Resources, rResources)
 
-	rTags := make([]d.Tag, len(dbRecipe.Tags))
+	rTags := make([]core.Tag, len(dbRecipe.Tags))
 	mapFromRecipeTags(id, dbRecipe.Tags, rTags)
 
-	return d.Recipe{
+	return core.Recipe{
 		ID:          id,
 		Title:       dbRecipe.Title,
 		Description: dbRecipe.Description,
@@ -84,7 +83,7 @@ func (m *MongoStorage) GetRecipe(ctx context.Context, id d.ID[d.Recipe]) (d.Reci
 	}, nil
 }
 
-func (m *MongoStorage) FindRecipesByName(ctx context.Context, name string) ([]d.Recipe, error) {
+func (m *MongoStorage) FindRecipesByName(ctx context.Context, name string) ([]core.Recipe, error) {
 	c := m.ForCollection(CollectionRecipes)
 	index := mongo.IndexModel{
 		Keys: bson.D{
@@ -96,8 +95,6 @@ func (m *MongoStorage) FindRecipesByName(ctx context.Context, name string) ([]d.
 	if err != nil {
 		return nil, err
 	}
-
-	//phrase := fmt.Sprintf(`\"%s\"`, name)
 	cursor, err := c.Find(ctx, bson.M{"$text": bson.M{"$search": name}}) // should consider count, but we need pagination in future anyway
 	if err != nil {
 		return nil, err
@@ -106,7 +103,7 @@ func (m *MongoStorage) FindRecipesByName(ctx context.Context, name string) ([]d.
 	return mapFromRecipes(cursor, ctx)
 }
 
-func (m *MongoStorage) FindRecipesByTags(ctx context.Context, tags []d.Tag) ([]d.Recipe, error) {
+func (m *MongoStorage) FindRecipesByTags(ctx context.Context, tags []core.Tag) ([]core.Recipe, error) {
 	c := m.ForCollection(CollectionRecipes)
 	names := make([]string, 0, len(tags))
 	for _, tag := range tags {
@@ -119,7 +116,7 @@ func (m *MongoStorage) FindRecipesByTags(ctx context.Context, tags []d.Tag) ([]d
 	return mapFromRecipes(cursor, ctx)
 }
 
-func (m *MongoStorage) ListRecipes(ctx context.Context) ([]d.Recipe, error) {
+func (m *MongoStorage) ListRecipes(ctx context.Context) ([]core.Recipe, error) {
 	c := m.ForCollection(CollectionRecipes)
 	cursor, err := c.Find(ctx, bson.D{{}}) // should consider count, but we need pagination in future anyway
 	if err != nil {
@@ -129,50 +126,76 @@ func (m *MongoStorage) ListRecipes(ctx context.Context) ([]d.Recipe, error) {
 	return mapFromRecipes(cursor, ctx)
 }
 
-func (m *MongoStorage) UpdateRecipeTitle(ctx context.Context, id d.ID[d.Recipe], title string) error {
+func (m *MongoStorage) UpdateRecipeTitle(ctx context.Context, id core.ID[core.Recipe], title string) error {
 	c := m.ForCollection(CollectionRecipes)
 
 	update := bson.D{{"$set", bson.D{{"title", title}}}}
-	res, err := c.UpdateByID(ctx, id.ID, update)
+	res, err := c.UpdateByID(ctx, id.Value, update)
 	if err != nil {
 		return err
 	}
 
 	if res.ModifiedCount != 1 {
-		return fmt.Errorf("recipe id: %s - ModifiedCount is %v, expected 1", id.ID, res.ModifiedCount)
+		return fmt.Errorf("recipe id: %s - ModifiedCount is %v, expected 1", id.Value, res.ModifiedCount)
 	}
 
 	return nil
 }
 
-func (m *MongoStorage) UpdateRecipeDescription(ctx context.Context, id d.ID[d.Recipe], description string) error {
+func (m *MongoStorage) UpdateRecipeDescription(ctx context.Context, id core.ID[core.Recipe], description string) error {
 	c := m.ForCollection(CollectionRecipes)
 
 	update := bson.D{{"$set", bson.D{{"description", description}}}}
-	res, err := c.UpdateByID(ctx, id.ID, update)
+	res, err := c.UpdateByID(ctx, id.Value, update)
 	if err != nil {
 		return err
 	}
 
 	if res.ModifiedCount != 1 {
-		return fmt.Errorf("recipe id: %s - ModifiedCount is %v, expected 1", id.ID, res.ModifiedCount)
+		return fmt.Errorf("recipe id: %s - ModifiedCount is %v, expected 1", id.Value, res.ModifiedCount)
 	}
 
 	return nil
 }
 
-func (m *MongoStorage) DeleteRecipe(ctx context.Context, id d.ID[d.Recipe]) error {
+func (m *MongoStorage) DeleteRecipe(ctx context.Context, id core.ID[core.Recipe]) error {
 	c := m.ForCollection(CollectionRecipes)
-	_, errOrNil := c.DeleteOne(ctx, id.ID)
+	_, errOrNil := c.DeleteOne(ctx, id.Value)
 	return errOrNil
 }
 
-func (m *MongoStorage) RemoveResourceFromRecipe(ctx context.Context, recipeID d.ID[d.Recipe], resourceID d.ID[d.Resource]) error {
+func (m *MongoStorage) RemoveResourceFromRecipe(ctx context.Context, recipeID core.ID[core.Recipe], resourceID core.ID[core.Resource]) error {
 	c := m.ForCollection(CollectionRecipes)
 
-	update := bson.M{"$pull": bson.M{"resources": bson.M{"_id": resourceID.ID}}}
-	_, errOrNil := c.UpdateByID(ctx, recipeID.ID, update)
+	update := bson.M{"$pull": bson.M{"resources": bson.M{"_id": resourceID.Value}}}
+	_, errOrNil := c.UpdateByID(ctx, recipeID.Value, update)
 	return errOrNil
+}
+
+func (m *MongoStorage) FindRecipesByNameAndTags(ctx context.Context, name string, tags []core.Tag) ([]core.Recipe, error) {
+	c := m.ForCollection(CollectionRecipes)
+	tagNames := make([]string, 0, len(tags))
+	for _, tag := range tags {
+		tagNames = append(tagNames, tag.Name)
+	}
+	cursor, errOrNil := c.Aggregate(ctx, createFindRecipesByNameAndTagsPipeline(name, tagNames))
+	if errOrNil != nil {
+		return nil, errOrNil
+	}
+	return mapFromRecipes(cursor, ctx)
+}
+
+func createFindRecipesByNameAndTagsPipeline(name string, tagNames []string) mongo.Pipeline {
+	filterByTags := bson.E{Key: "tags._id", Value: bson.M{"$in": tagNames}}
+	filterByName := bson.E{Key: "$text", Value: bson.M{"$search": name}}
+	filters := bson.M{"$and": bson.A{filterByName, filterByTags}}
+
+	extractSharedTagsCount := bson.D{{"$size", bson.M{"$setIntersection": bson.A{tagNames, "$tags._id"}}}}
+	addCountToDocument := bson.M{"matchedTagCount": extractSharedTagsCount}
+
+	sortByTagsRelevanceCount := bson.M{"matchedTagCount": -1}
+	removeTemporalCount := "matchedTagCount"
+	return mongo.Pipeline{match(filters), addFields(addCountToDocument), sort(sortByTagsRelevanceCount), unset(removeTemporalCount)}
 }
 
 func createFindRecipesByTagsPipeline(tagNames []string) mongo.Pipeline {

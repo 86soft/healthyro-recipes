@@ -3,7 +3,6 @@ module github.com/86soft/healthyro-recipes
 go 1.18
 
 require (
-	github.com/google/uuid v1.3.0
 	github.com/rs/zerolog v1.15.0
 	go.mongodb.org/mongo-driver v1.8.4
 	google.golang.org/grpc v1.41.0
@@ -16,6 +15,7 @@ require (
 	github.com/golang/snappy v0.0.1 // indirect
 	github.com/klauspost/compress v1.13.6 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/segmentio/ksuid v1.0.4 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
 	github.com/xdg-go/scram v1.0.2 // indirect
 	github.com/xdg-go/stringprep v1.0.2 // indirect

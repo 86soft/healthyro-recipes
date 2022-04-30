@@ -3,11 +3,14 @@ syntax = "proto3";
 option go_package = "github.com/86soft/healthyro-recipes;hproto";
 
 service RecipeSvc {
+  // Read
   rpc ListRecipe(ListRecipeRequest) returns (ListRecipeResponse) {}
   rpc FindRecipesByName(FindRecipesByNameRequest) returns (FindRecipesByNameResponse) {}
   rpc GetRecipe(GetRecipeRequest) returns (GetRecipeResponse) {}
-  rpc CreateRecipe(CreateRecipeRequest) returns (CreateRecipeResponse) {}
   rpc FindRecipesByTags(FindRecipesByTagsRequest) returns (FindRecipesByTagsResponse) {}
+  rpc FindRecipesByNameAndTags(FindRecipesByNameAndTagsRequest) returns (FindRecipesByNameAndTagsResponse) {}
+  // Write
+  rpc CreateRecipe(CreateRecipeRequest) returns (CreateRecipeResponse) {}
   rpc UpdateRecipeTitle(UpdateRecipeTitleRequest) returns (UpdateRecipeTitleResponse) {}
   rpc UpdateRecipeDescription(UpdateRecipeDescriptionRequest) returns (UpdateRecipeDescriptionResponse) {}
   rpc DeleteRecipe(DeleteRecipeRequest) returns (DeleteRecipeResponse) {}
@@ -16,6 +19,15 @@ service RecipeSvc {
   rpc CreateTag(CreateTagRequest) returns (CreateTagResponse) {}
   rpc AddTagToRecipe(AddTagToRecipeRequest) returns (AddTagToRecipeResponse) {}
   rpc RemoveTagFromRecipe(RemoveTagFromRecipeRequest) returns (RemoveTagFromRecipeResponse) {}
+}
+
+message FindRecipesByNameAndTagsRequest{
+  string name = 1;
+  repeated string tags = 2;
+}
+
+message FindRecipesByNameAndTagsResponse{
+  repeated Recipe recipes = 1;
 }
 
 message RemoveResourceFromRecipeRequest{
@@ -28,7 +40,7 @@ message RemoveRecipeFromResourceResponse{
 }
 
 message Recipe {
-  string recipeId =1;
+  string recipeId = 1;
   string title = 2;
   string description = 3;
   repeated Resource resources = 4;
@@ -58,6 +70,7 @@ message CreateRecipeRequest {
   }
   message Tag {
     string name = 1;
+    bool create = 2;
   }
 
 }

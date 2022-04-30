@@ -23,7 +23,11 @@ var _ core.Store = (*MongoStorage)(nil)
 func NewMongoClient(uri string, timeoutInSec time.Duration) (*mongo.Client, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeoutInSec*time.Second)
 	defer cancel()
-	return mongo.Connect(ctx, options.Client().ApplyURI(uri))
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
+	if err != nil {
+		return nil, err
+	}
+	return client, nil
 }
 
 func NewMongoStorage(client *mongo.Client) *MongoStorage {

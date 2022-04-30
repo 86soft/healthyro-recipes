@@ -19,7 +19,7 @@ type Commands struct {
 }
 
 func NewCommandHandlers(repo core.Store, logger zerolog.Logger) (Commands, error) {
-	createRecipe, err := commands.NewCreateRecipeHandler(repo.CreateRecipe, logger)
+	createRecipe, err := commands.NewCreateRecipeHandler(repo.CreateRecipe, repo.CreateTags, repo.AddRecipeToTags, logger)
 	if err != nil {
 		return Commands{}, err
 	}

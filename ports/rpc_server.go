@@ -3,10 +3,12 @@ package ports
 import (
 	c "context"
 	"github.com/86soft/healthyro-recipes/app"
-	"github.com/86soft/healthyro-recipes/app/commands"
+	cmnds "github.com/86soft/healthyro-recipes/app/commands"
 	"github.com/86soft/healthyro-recipes/app/queries"
 	"github.com/86soft/healthyro-recipes/core"
 	p "github.com/86soft/healthyro-recipes/ports/protos"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type RecipeServer struct {
@@ -14,15 +16,17 @@ type RecipeServer struct {
 	app app.Application
 }
 
+var _ p.RecipeSvcServer = (*RecipeServer)(nil)
+
 func NewRecipeServer(application app.Application) RecipeServer {
 	return RecipeServer{app: application}
 }
 
 func (r RecipeServer) CreateRecipe(ctx c.Context, req *p.CreateRecipeRequest) (*p.CreateRecipeResponse, error) {
 	rpcRes := req.GetResources()
-	res := make([]commands.RecipeResources, 0, len(rpcRes))
+	res := make([]cmnds.RecipeResources, 0, len(rpcRes))
 	for _, r := range rpcRes {
-		res = append(res, commands.RecipeResources{
+		res = append(res, cmnds.RecipeResources{
 			Name:  r.GetName(),
 			Kind:  r.GetKind(),
 			Value: r.GetValue(),
@@ -30,12 +34,15 @@ func (r RecipeServer) CreateRecipe(ctx c.Context, req *p.CreateRecipeRequest) (*
 	}
 
 	rpcTags := req.GetTags()
-	tags := make([]string, 0, len(rpcTags))
+	tags := make([]cmnds.CreateRecipeCmdTag, 0, len(rpcTags))
 	for _, t := range rpcTags {
-		tags = append(tags, t.GetName())
+		tags = append(tags, cmnds.CreateRecipeCmdTag{
+			Name:   t.GetName(),
+			Create: t.GetCreate(),
+		})
 	}
 
-	cmd := commands.CreateRecipe{
+	cmd := cmnds.CreateRecipe{
 		Title:       req.GetTitle(),
 		Description: req.GetDescription(),
 		Resources:   res,
@@ -48,7 +55,7 @@ func (r RecipeServer) CreateRecipe(ctx c.Context, req *p.CreateRecipeRequest) (*
 	}
 
 	return &p.CreateRecipeResponse{
-		RecipeId: id.ID,
+		RecipeId: id.Value.String(),
 	}, nil
 }
 
@@ -72,8 +79,12 @@ func (r RecipeServer) FindRecipesByName(ctx c.Context, req *p.FindRecipesByNameR
 }
 
 func (r RecipeServer) GetRecipe(ctx c.Context, req *p.GetRecipeRequest) (*p.GetRecipeResponse, error) {
+	recipeID, err := core.FromStringID[core.Recipe](req.GetRecipeId())
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "could not deserialize recipe id")
+	}
 	q := queries.GetRecipeById{
-		RecipeID: core.FromStringID[core.Recipe](req.GetRecipeId()),
+		RecipeID: recipeID,
 	}
 	recipe, err := r.app.GetRecipeById(ctx, q)
 	if err != nil {
@@ -100,69 +111,139 @@ func (r RecipeServer) FindRecipesByTags(ctx c.Context, req *p.FindRecipesByTagsR
 }
 
 func (r RecipeServer) UpdateRecipeTitle(ctx c.Context, req *p.UpdateRecipeTitleRequest) (*p.UpdateRecipeTitleResponse, error) {
-	cmd := commands.UpdateRecipeTitle{
-		RecipeID: core.FromStringID[core.Recipe](req.GetRecipeId()),
+	recipeID, err := core.FromStringID[core.Recipe](req.GetRecipeId())
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "could not deserialize recipe id")
+	}
+
+	cmd := cmnds.UpdateRecipeTitle{
+		RecipeID: recipeID,
 		Title:    req.GetTitle(),
 	}
 	return &p.UpdateRecipeTitleResponse{}, r.app.UpdateRecipeTitle(ctx, cmd)
 }
 
 func (r RecipeServer) UpdateRecipeDescription(ctx c.Context, req *p.UpdateRecipeDescriptionRequest) (*p.UpdateRecipeDescriptionResponse, error) {
-	cmd := commands.UpdateRecipeDescription{
-		RecipeID:    core.FromStringID[core.Recipe](req.GetRecipeId()),
+	recipeID, err := core.FromStringID[core.Recipe](req.GetRecipeId())
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "could not deserialize recipe id")
+	}
+
+	cmd := cmnds.UpdateRecipeDescription{
+		RecipeID:    recipeID,
 		Description: req.GetDescription(),
 	}
 	return &p.UpdateRecipeDescriptionResponse{}, r.app.UpdateRecipeDescription(ctx, cmd)
 }
 
 func (r RecipeServer) DeleteRecipe(ctx c.Context, req *p.DeleteRecipeRequest) (*p.DeleteRecipeResponse, error) {
-	cmd := commands.DeleteRecipe{
-		RecipeID: core.FromStringID[core.Recipe](req.GetRecipeId()),
+	recipeID, err := core.FromStringID[core.Recipe](req.GetRecipeId())
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "could not deserialize recipe id")
+	}
+
+	cmd := cmnds.DeleteRecipe{
+		RecipeID: recipeID,
 	}
 	return &p.DeleteRecipeResponse{}, r.app.DeleteRecipe(ctx, cmd)
 }
 
 func (r RecipeServer) RemoveRecipeFromResource(ctx c.Context, req *p.RemoveResourceFromRecipeRequest) (*p.RemoveRecipeFromResourceResponse, error) {
-	cmd := commands.RemoveResourceFromRecipe{
-		RecipeID:   core.FromStringID[core.Recipe](req.GetRecipeId()),
-		ResourceID: core.FromStringID[core.Resource](req.GetResourceId()),
+	recipeID, err := core.FromStringID[core.Recipe](req.GetRecipeId())
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "could not deserialize recipe id")
+	}
+	resID, err := core.FromStringID[core.Resource](req.GetResourceId())
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "could not deserialize resource id")
+	}
+
+	cmd := cmnds.RemoveResourceFromRecipe{
+		RecipeID:   recipeID,
+		ResourceID: resID,
 	}
 	return &p.RemoveRecipeFromResourceResponse{}, r.app.RemoveResourceFromRecipe(ctx, cmd)
 }
 
 func (r RecipeServer) AddRecipeResource(ctx c.Context, req *p.AddRecipeResourceRequest) (*p.AddRecipeResourceResponse, error) {
-	cmd := commands.AddRecipeResource{
+	recipeID, err := core.FromStringID[core.Recipe](req.GetRecipeId())
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "could not deserialize recipe id")
+	}
+
+	cmd := cmnds.AddRecipeResource{
 		Name:     req.GetName(),
 		Kind:     req.GetKind(),
 		Value:    req.GetValue(),
-		RecipeID: core.FromStringID[core.Recipe](req.GetRecipeId()),
+		RecipeID: recipeID,
 	}
 	return &p.AddRecipeResourceResponse{}, r.app.AddRecipeResource(ctx, cmd)
 }
 
 func (r RecipeServer) CreateTag(ctx c.Context, req *p.CreateTagRequest) (*p.CreateTagResponse, error) {
-	cmd := commands.CreateTag{Name: req.GetName()}
+	cmd := cmnds.CreateTag{Name: req.GetName()}
 	id, err := r.app.CreateTag(ctx, cmd)
 	if err != nil {
 		return nil, err
 	}
-	return &p.CreateTagResponse{TagId: id.ID}, nil
+
+	return &p.CreateTagResponse{TagId: id.Value.String()}, nil
 }
 func (r RecipeServer) AddTagToRecipe(ctx c.Context, req *p.AddTagToRecipeRequest) (*p.AddTagToRecipeResponse, error) {
-	cmd := commands.AddTagToRecipe{
+	recipeID, err := core.FromStringID[core.Recipe](req.GetRecipeId())
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "could not deserialize recipe id")
+	}
+	tagID, err := core.FromStringID[core.Tag](req.GetTagId())
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "could not deserialize tag id")
+	}
+
+	cmd := cmnds.AddTagToRecipe{
 		Name:         req.GetTagName(),
-		TagID:        core.FromStringID[core.Tag](req.GetTagId()),
-		RecipeID:     core.FromStringID[core.Recipe](req.GetRecipeId()),
+		TagID:        tagID,
+		RecipeID:     recipeID,
 		CreateNewTag: req.GetCreateNewTag(),
 	}
 	return &p.AddTagToRecipeResponse{}, r.app.AddTagToRecipe(ctx, cmd)
 }
 func (r RecipeServer) RemoveTagFromRecipe(ctx c.Context, req *p.RemoveTagFromRecipeRequest) (*p.RemoveTagFromRecipeResponse, error) {
-	cmd := commands.RemoveTagFromRecipe{
-		TagID:    core.FromStringID[core.Tag](req.GetTagId()),
-		RecipeID: core.FromStringID[core.Recipe](req.GetRecipeId()),
+	recipeID, err := core.FromStringID[core.Recipe](req.GetRecipeId())
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "could not deserialize recipe id")
+	}
+	tagID, err := core.FromStringID[core.Tag](req.GetTagId())
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "could not deserialize tag id")
+	}
+
+	cmd := cmnds.RemoveTagFromRecipe{
+		TagID:    tagID,
+		RecipeID: recipeID,
 	}
 	return &p.RemoveTagFromRecipeResponse{}, r.app.RemoveTagFromRecipe(ctx, cmd)
+}
+
+func (r RecipeServer) FindRecipesByNameAndTags(
+	ctx c.Context,
+	req *p.FindRecipesByNameAndTagsRequest,
+) (*p.FindRecipesByNameAndTagsResponse, error) {
+	reqTags := req.GetTags()
+	t := make([]core.Tag, 0, len(reqTags))
+	for _, tag := range reqTags {
+		t = append(t, core.Tag{
+			Name: tag,
+		})
+	}
+
+	recipes, err := r.app.FindRecipesByNameAndTags(ctx, queries.FindRecipesByNameAndTags{
+		Name: req.GetName(),
+		Tags: t,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &p.FindRecipesByNameAndTagsResponse{Recipes: mapRecipesToResponse(recipes)}, nil
 }
 
 func mapRecipesToResponse(recipes []core.Recipe) []*p.Recipe {
@@ -188,7 +269,7 @@ func mapRecipeToResponse(r core.Recipe) *p.Recipe {
 		})
 	}
 	return &p.Recipe{
-		RecipeId:    r.ID.ID,
+		RecipeId:    r.ID.Value.String(),
 		Title:       r.Title,
 		Description: r.Description,
 		Resources:   resources,

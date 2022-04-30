@@ -1,8 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
+	"os/signal"
+	"syscall"
 )
 
 func main() {
@@ -18,11 +21,23 @@ func Start() error {
 	if err != nil {
 		return err
 	}
-	if err = svc.Run(); err != nil {
-		return err
+
+	exit := make(chan os.Signal, 1)
+	signal.Notify(exit, os.Interrupt, syscall.SIGTERM)
+	r := svc.Run()
+
+	select {
+	case err := <-r:
+		if err != nil {
+			err = fmt.Errorf("run: %w", err)
+		}
+	case <-exit:
 	}
-	if err = svc.Clear(); err != nil {
-		return err
+
+	problems := svc.Stop()
+	if problems != nil {
+		err = fmt.Errorf("problems: %w", err)
 	}
-	return nil
+
+	return err
 }

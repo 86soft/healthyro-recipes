@@ -1,24 +1,22 @@
 package core
 
-import "github.com/google/uuid"
-
-type ResourceID struct {
-}
-
-type RecipeID interface {
-}
-
-type TagID struct {
-}
+import (
+	"fmt"
+	"github.com/segmentio/ksuid"
+)
 
 type ID[T any] struct {
-	ID string
+	Value ksuid.KSUID
 }
 
 func CreateID[T any]() ID[T] {
-	return ID[T]{ID: uuid.New().String()}
+	return ID[T]{Value: ksuid.New()}
 }
 
-func FromStringID[T any](s string) ID[T] {
-	return ID[T]{ID: s}
+func FromStringID[T any](s string) (ID[T], error) {
+	id, err := ksuid.Parse(s)
+	if err != nil {
+		return ID[T]{}, fmt.Errorf("FromStringID: %w", err)
+	}
+	return ID[T]{Value: id}, nil
 }

@@ -12,14 +12,11 @@ type Document struct {
 
 type Recipe struct {
 	Document    `bson:",inline"`
-	ID          string      `bson:"_id"`
-	Title       string      `bson:"title"`
-	Description string      `bson:"description,omitempty"`
-	Resources   []Resource  `bson:"resources,omitempty"`
-	Tags        []RecipeTag `bson:"tags,omitempty"`
-}
-type RecipeTag struct {
-	Name string `bson:"_id"`
+	ID          string     `bson:"_id"`
+	Title       string     `bson:"title"`
+	Description string     `bson:"description,omitempty"`
+	Resources   []Resource `bson:"resources,omitempty"`
+	Tags        []string   `bson:"tags,omitempty"`
 }
 
 type Resource struct {
@@ -31,7 +28,7 @@ type Resource struct {
 }
 
 type Tag struct {
-	Document  `bson:",inline"`
-	Name      string   `bson:"_id"`
-	RecipeIDS []string `bson:"recipeIds"`
+	Document   `bson:",inline"`
+	Name       string   `bson:"_id"`
+	RecipesIDs []string `bson:"recipesIDs"`
 }
