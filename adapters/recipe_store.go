@@ -52,7 +52,7 @@ func (m *MongoStorage) AddRecipeResource(ctx context.Context, id core.ID[core.Re
 		Kind:     r.Kind,
 		Value:    r.Value,
 	}}}
-	_, errOrNil := recipeColl.UpdateByID(ctx, id.Value, update)
+	_, errOrNil := recipeColl.UpdateByID(ctx, id.Value.String(), update)
 	if errOrNil != nil {
 		return errOrNil
 	}
@@ -136,7 +136,7 @@ func (m *MongoStorage) UpdateRecipeTitle(ctx context.Context, id core.ID[core.Re
 	}
 
 	if res.ModifiedCount != 1 {
-		return fmt.Errorf("recipe id: %s - ModifiedCount is %v, expected 1", id.Value, res.ModifiedCount)
+		return fmt.Errorf("recipe id: %s - ModifiedCount is %v, expected 1", id.Value.String(), res.ModifiedCount)
 	}
 
 	return nil
@@ -152,7 +152,7 @@ func (m *MongoStorage) UpdateRecipeDescription(ctx context.Context, id core.ID[c
 	}
 
 	if res.ModifiedCount != 1 {
-		return fmt.Errorf("recipe id: %s - ModifiedCount is %v, expected 1", id.Value, res.ModifiedCount)
+		return fmt.Errorf("recipe id: %s - ModifiedCount is %v, expected 1", id.Value.String(), res.ModifiedCount)
 	}
 
 	return nil
@@ -160,15 +160,15 @@ func (m *MongoStorage) UpdateRecipeDescription(ctx context.Context, id core.ID[c
 
 func (m *MongoStorage) DeleteRecipe(ctx context.Context, id core.ID[core.Recipe]) error {
 	c := m.ForCollection(CollectionRecipes)
-	_, errOrNil := c.DeleteOne(ctx, id.Value)
+	_, errOrNil := c.DeleteOne(ctx, bson.M{"_id": id.Value.String()}) //maybe soft delete?
 	return errOrNil
 }
 
 func (m *MongoStorage) RemoveResourceFromRecipe(ctx context.Context, recipeID core.ID[core.Recipe], resourceID core.ID[core.Resource]) error {
 	c := m.ForCollection(CollectionRecipes)
 
-	update := bson.M{"$pull": bson.M{"resources": bson.M{"_id": resourceID.Value}}}
-	_, errOrNil := c.UpdateByID(ctx, recipeID.Value, update)
+	update := bson.M{"$pull": bson.M{"resources": bson.M{"_id": resourceID.Value.String()}}}
+	_, errOrNil := c.UpdateByID(ctx, recipeID.Value.String(), update)
 	return errOrNil
 }
 
