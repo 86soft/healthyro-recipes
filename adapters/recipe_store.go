@@ -64,7 +64,7 @@ func (m *MongoStorage) GetRecipe(ctx context.Context, id core.ID[core.Recipe]) (
 
 	dbRecipe := Recipe{}
 
-	err := c.FindOne(ctx, bson.D{{"_id", id.Value}}).Decode(&dbRecipe)
+	err := c.FindOne(ctx, bson.D{{"_id", id.Value.String()}}).Decode(&dbRecipe)
 	if err != nil {
 		return core.Recipe{}, err
 	}
