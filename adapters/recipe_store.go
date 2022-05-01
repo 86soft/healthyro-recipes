@@ -146,7 +146,7 @@ func (m *MongoStorage) UpdateRecipeDescription(ctx context.Context, id core.ID[c
 	c := m.ForCollection(CollectionRecipes)
 
 	update := bson.D{{"$set", bson.D{{"description", description}}}}
-	res, err := c.UpdateByID(ctx, id.Value, update)
+	res, err := c.UpdateByID(ctx, id.Value.String(), update)
 	if err != nil {
 		return err
 	}
