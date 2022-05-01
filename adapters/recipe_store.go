@@ -199,9 +199,9 @@ func createFindRecipesByNameAndTagsPipeline(name string, tagNames []string) mong
 }
 
 func createFindRecipesByTagsPipeline(tagNames []string) mongo.Pipeline {
-	filterByTags := bson.D{{"tags._id", bson.M{"$in": tagNames}}}
+	filterByTags := bson.D{{"tags", bson.M{"$in": tagNames}}}
 
-	extractSharedTagsCount := bson.D{{"$size", bson.M{"$setIntersection": bson.A{tagNames, "$tags._id"}}}}
+	extractSharedTagsCount := bson.D{{"$size", bson.M{"$setIntersection": bson.A{tagNames, "$tags"}}}}
 	addCountToDocument := bson.M{"matchedTagCount": extractSharedTagsCount}
 
 	sortByTagsRelevanceCount := bson.M{"matchedTagCount": -1}
