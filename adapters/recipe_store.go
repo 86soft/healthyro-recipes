@@ -185,12 +185,18 @@ func (m *MongoStorage) FindRecipesByNameAndTags(ctx context.Context, name string
 	return mapFromRecipes(cursor, ctx)
 }
 
-func createFindRecipesByNameAndTagsPipeline(name string, tagNames []string) mongo.Pipeline {
-	filterByTags := bson.E{Key: "tags._id", Value: bson.M{"$in": tagNames}}
-	filterByName := bson.E{Key: "$text", Value: bson.M{"$search": name}}
+func createFindRecipesByNameAndTagsPipeline(title string, tagNames []string) mongo.Pipeline {
+	filterByTags := bson.M{"tags": bson.M{"$in": tagNames}}
+
+	filterByName := bson.D{
+		{"title", bson.D{
+			{"$regex", fmt.Sprintf(".*%s.*", title)},
+			{"$options", "i"}, // i for case insensitive https://www.mongodb.com/docs/manual/reference/operator/query/regex/#mongodb-query-op.-regex
+		}},
+	}
 	filters := bson.M{"$and": bson.A{filterByName, filterByTags}}
 
-	extractSharedTagsCount := bson.D{{"$size", bson.M{"$setIntersection": bson.A{tagNames, "$tags._id"}}}}
+	extractSharedTagsCount := bson.D{{"$size", bson.M{"$setIntersection": bson.A{tagNames, "$tags"}}}}
 	addCountToDocument := bson.M{"matchedTagCount": extractSharedTagsCount}
 
 	sortByTagsRelevanceCount := bson.M{"matchedTagCount": -1}
