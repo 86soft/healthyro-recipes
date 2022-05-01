@@ -11,6 +11,7 @@ import (
 	hproto "github.com/86soft/healthyro-recipes/ports/protos"
 	"github.com/rs/zerolog"
 	"go.mongodb.org/mongo-driver/mongo"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
 	"google.golang.org/grpc/health/grpc_health_v1"
@@ -123,23 +124,36 @@ func (s *Service) Stop() error {
 	s.logger.Warn().Msgf("%s graceful shutdown", ServiceName)
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
-	err := s.dbDriver.Disconnect(ctx)
-	if err != nil {
-		return fmt.Errorf("dbDriver: %w", err)
-	}
 
-	stopSignal := make(chan Empty)
-	go func() {
-		s.server.GracefulStop()
-		stopSignal <- Empty{}
-	}()
-
-	select {
-	case <-stopSignal:
+	g, gCtx := errgroup.WithContext(ctx)
+	g.Go(func() error {
+		err := s.dbDriver.Disconnect(gCtx)
+		if err != nil {
+			return fmt.Errorf("dbDriver: %w", err)
+		}
 		return nil
-	case <-time.After(15 * time.Second):
-		return errors.New("GracefulStop took more than 15 seconds, timeout")
+	})
+
+	g.Go(func() error {
+		stopSignal := make(chan Empty)
+		go func() {
+			defer close(stopSignal)
+			s.server.GracefulStop()
+			stopSignal <- Empty{}
+		}()
+		select {
+		case <-stopSignal:
+			return nil
+		case <-gCtx.Done():
+			return gCtx.Err()
+		}
+	})
+
+	err := g.Wait()
+	if err != nil {
+		return fmt.Errorf("wait: %w", err)
 	}
+	return nil
 }
 
 func UnaryLoggingInterceptor(logger zerolog.Logger) grpc.UnaryServerInterceptor {

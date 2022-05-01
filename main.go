@@ -24,10 +24,10 @@ func Start() error {
 
 	exit := make(chan os.Signal, 1)
 	signal.Notify(exit, os.Interrupt, syscall.SIGTERM)
-	r := svc.Run()
+	errs := svc.Run()
 
 	select {
-	case err := <-r:
+	case err := <-errs:
 		if err != nil {
 			err = fmt.Errorf("run: %w", err)
 		}
@@ -36,8 +36,8 @@ func Start() error {
 
 	problems := svc.Stop()
 	if problems != nil {
-		err = fmt.Errorf("problems: %w", err)
+		err = fmt.Errorf("problems: %w", problems)
 	}
-
+	// we lose err info, refactor for err slice
 	return err
 }

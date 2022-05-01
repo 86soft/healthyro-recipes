@@ -68,8 +68,12 @@ func (m *MongoStorage) GetRecipe(ctx context.Context, id core.ID[core.Recipe]) (
 	if err != nil {
 		return core.Recipe{}, err
 	}
-	rResources := make([]core.Resource, len(dbRecipe.Resources))
-	mapFromResources(dbRecipe.Resources, rResources)
+	recipeResources := make([]core.Resource, len(dbRecipe.Resources))
+
+	err = mapFromResources(dbRecipe.Resources, recipeResources)
+	if err != nil {
+		return core.Recipe{}, fmt.Errorf("mapFromResources: %w", err)
+	}
 
 	rTags := make([]core.Tag, len(dbRecipe.Tags))
 	mapFromRecipeTags(id, dbRecipe.Tags, rTags)
@@ -78,24 +82,20 @@ func (m *MongoStorage) GetRecipe(ctx context.Context, id core.ID[core.Recipe]) (
 		ID:          id,
 		Title:       dbRecipe.Title,
 		Description: dbRecipe.Description,
-		Resources:   rResources,
+		Resources:   recipeResources,
 		Tags:        rTags,
 	}, nil
 }
 
-func (m *MongoStorage) FindRecipesByName(ctx context.Context, name string) ([]core.Recipe, error) {
+func (m *MongoStorage) FindRecipesByName(ctx context.Context, title string) ([]core.Recipe, error) {
 	c := m.ForCollection(CollectionRecipes)
-	index := mongo.IndexModel{
-		Keys: bson.D{
-			{"title", "text"},
-		},
-		Options: nil,
-	}
-	_, err := c.Indexes().CreateOne(ctx, index)
-	if err != nil {
-		return nil, err
-	}
-	cursor, err := c.Find(ctx, bson.M{"$text": bson.M{"$search": name}}) // should consider count, but we need pagination in future anyway
+	cursor, err := c.Find(ctx,
+		bson.D{
+			{"title", bson.D{
+				{"$regex", fmt.Sprintf(".*%s.*", title)},
+				{"$options", "i"}, // i for case insensitive https://www.mongodb.com/docs/manual/reference/operator/query/regex/#mongodb-query-op.-regex
+			}},
+		})
 	if err != nil {
 		return nil, err
 	}
