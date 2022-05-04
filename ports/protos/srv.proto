@@ -14,7 +14,7 @@ service RecipeSvc {
   rpc UpdateRecipeTitle(UpdateRecipeTitleRequest) returns (UpdateRecipeTitleResponse) {}
   rpc UpdateRecipeDescription(UpdateRecipeDescriptionRequest) returns (UpdateRecipeDescriptionResponse) {}
   rpc DeleteRecipe(DeleteRecipeRequest) returns (DeleteRecipeResponse) {}
-  rpc RemoveRecipeFromResource(RemoveResourceFromRecipeRequest) returns (RemoveRecipeFromResourceResponse) {}
+  rpc RemoveResourceFromRecipe(RemoveResourceFromRecipeRequest) returns (RemoveRecipeFromResourceResponse) {}
   rpc AddRecipeResource(AddRecipeResourceRequest) returns (AddRecipeResourceResponse) {}
   rpc CreateTag(CreateTagRequest) returns (CreateTagResponse) {}
   rpc AddTagToRecipe(AddTagToRecipeRequest) returns (AddTagToRecipeResponse) {}
@@ -170,18 +170,16 @@ message CreateTagResponse{
 
 message AddTagToRecipeRequest{
   string recipeId = 1;
-  string tagId = 2;
-  string tagName = 3;
-  bool createNewTag = 4;
+  string tagName = 2;
+  bool createNewTag = 3;
 }
 
 message AddTagToRecipeResponse{
 }
 
 message RemoveTagFromRecipeRequest{
-  string recipeId = 1;
-  string tagId = 2;
-  string tagName = 3;
+  string recipeID = 1;
+  string tag = 2;
 }
 
 message RemoveTagFromRecipeResponse{

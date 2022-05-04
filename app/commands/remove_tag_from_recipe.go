@@ -8,7 +8,7 @@ import (
 )
 
 type RemoveTagFromRecipe struct {
-	TagID    c.ID[c.Tag]
+	Tag      string
 	RecipeID c.ID[c.Recipe]
 }
 
@@ -22,6 +22,6 @@ func NewRemoveTagFromRecipeHandler(
 		return nil, errors.New("NewRemoveTagFromRecipeHandler - removeTagFn dependency is nil")
 	}
 	return func(ctx context.Context, cmd RemoveTagFromRecipe) error {
-		return removeTagFn(ctx, cmd.RecipeID, cmd.TagID)
+		return removeTagFn(ctx, cmd.RecipeID, cmd.Tag)
 	}, nil
 }

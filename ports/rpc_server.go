@@ -2,6 +2,7 @@ package ports
 
 import (
 	c "context"
+	"fmt"
 	"github.com/86soft/healthyro-recipes/app"
 	cmnds "github.com/86soft/healthyro-recipes/app/commands"
 	"github.com/86soft/healthyro-recipes/app/queries"
@@ -50,8 +51,7 @@ func (r RecipeServer) CreateRecipe(ctx c.Context, req *p.CreateRecipeRequest) (*
 	}
 	id, err := r.app.CreateRecipe(ctx, cmd)
 	if err != nil {
-		r.app.Log.Error().Msg(err.Error())
-		return nil, err
+		return nil, fmt.Errorf("CreateRecipe: %w", err)
 	}
 
 	return &p.CreateRecipeResponse{
@@ -148,23 +148,6 @@ func (r RecipeServer) DeleteRecipe(ctx c.Context, req *p.DeleteRecipeRequest) (*
 	return &p.DeleteRecipeResponse{}, r.app.DeleteRecipe(ctx, cmd)
 }
 
-func (r RecipeServer) RemoveRecipeFromResource(ctx c.Context, req *p.RemoveResourceFromRecipeRequest) (*p.RemoveRecipeFromResourceResponse, error) {
-	recipeID, err := core.FromStringID[core.Recipe](req.GetRecipeId())
-	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "could not deserialize recipe id")
-	}
-	resID, err := core.FromStringID[core.Resource](req.GetResourceId())
-	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "could not deserialize resource id")
-	}
-
-	cmd := cmnds.RemoveResourceFromRecipe{
-		RecipeID:   recipeID,
-		ResourceID: resID,
-	}
-	return &p.RemoveRecipeFromResourceResponse{}, r.app.RemoveResourceFromRecipe(ctx, cmd)
-}
-
 func (r RecipeServer) AddRecipeResource(ctx c.Context, req *p.AddRecipeResourceRequest) (*p.AddRecipeResourceResponse, error) {
 	recipeID, err := core.FromStringID[core.Recipe](req.GetRecipeId())
 	if err != nil {
@@ -194,31 +177,22 @@ func (r RecipeServer) AddTagToRecipe(ctx c.Context, req *p.AddTagToRecipeRequest
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "could not deserialize recipe id")
 	}
-	tagID, err := core.FromStringID[core.Tag](req.GetTagId())
-	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "could not deserialize tag id")
-	}
 
 	cmd := cmnds.AddTagToRecipe{
 		Name:         req.GetTagName(),
-		TagID:        tagID,
 		RecipeID:     recipeID,
 		CreateNewTag: req.GetCreateNewTag(),
 	}
 	return &p.AddTagToRecipeResponse{}, r.app.AddTagToRecipe(ctx, cmd)
 }
 func (r RecipeServer) RemoveTagFromRecipe(ctx c.Context, req *p.RemoveTagFromRecipeRequest) (*p.RemoveTagFromRecipeResponse, error) {
-	recipeID, err := core.FromStringID[core.Recipe](req.GetRecipeId())
+	recipeID, err := core.FromStringID[core.Recipe](req.GetRecipeID())
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "could not deserialize recipe id")
 	}
-	tagID, err := core.FromStringID[core.Tag](req.GetTagId())
-	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "could not deserialize tag id")
-	}
 
 	cmd := cmnds.RemoveTagFromRecipe{
-		TagID:    tagID,
+		Tag:      req.GetTag(),
 		RecipeID: recipeID,
 	}
 	return &p.RemoveTagFromRecipeResponse{}, r.app.RemoveTagFromRecipe(ctx, cmd)
@@ -244,6 +218,26 @@ func (r RecipeServer) FindRecipesByNameAndTags(
 		return nil, err
 	}
 	return &p.FindRecipesByNameAndTagsResponse{Recipes: mapRecipesToResponse(recipes)}, nil
+}
+
+func (r RecipeServer) RemoveResourceFromRecipe(
+	ctx c.Context,
+	req *p.RemoveResourceFromRecipeRequest,
+) (*p.RemoveRecipeFromResourceResponse, error) {
+	recipeID, err := core.FromStringID[core.Recipe](req.GetRecipeId())
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "could not deserialize recipe id")
+	}
+	resID, err := core.FromStringID[core.Resource](req.GetResourceId())
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "could not deserialize resource id")
+	}
+
+	cmd := cmnds.RemoveResourceFromRecipe{
+		RecipeID:   recipeID,
+		ResourceID: resID,
+	}
+	return &p.RemoveRecipeFromResourceResponse{}, r.app.RemoveResourceFromRecipe(ctx, cmd)
 }
 
 func mapRecipesToResponse(recipes []core.Recipe) []*p.Recipe {

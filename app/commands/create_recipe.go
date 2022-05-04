@@ -43,13 +43,18 @@ func NewCreateRecipeHandler(
 	if addRecipeToTagsFn == nil {
 		return nil, errors.New("NewCreateRecipeHandler - addRecipeToTagsFn dependency is nil")
 	}
-
 	return func(ctx context.Context, cmd CreateRecipe) (core.ID[core.Recipe], error) {
 		recipeID := core.CreateID[core.Recipe]()
 
 		resources := make([]core.Resource, len(cmd.Resources))
 		cmd.mapResources(resources)
 		allTags, newTags := cmd.mapTags()
+
+		if len(newTags) > 0 {
+			if err := createTagsFn(ctx, newTags); err != nil {
+				return core.ID[core.Recipe]{}, fmt.Errorf("createTagsFn: %w", err)
+			}
+		}
 
 		recipe := core.Recipe{
 			ID:          recipeID,
@@ -62,12 +67,6 @@ func NewCreateRecipeHandler(
 		err := createRecipeFn(ctx, &recipe)
 		if err != nil {
 			return core.ID[core.Recipe]{}, fmt.Errorf("createRecipeFn: %w", err)
-		}
-
-		if len(newTags) > 0 {
-			if err = createTagsFn(ctx, newTags); err != nil {
-				return core.ID[core.Recipe]{}, fmt.Errorf("createTagsFn: %w", err)
-			}
 		}
 
 		err = addRecipeToTagsFn(ctx, recipeID, allTags)

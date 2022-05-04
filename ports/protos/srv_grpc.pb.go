@@ -29,7 +29,7 @@ type RecipeSvcClient interface {
 	UpdateRecipeTitle(ctx context.Context, in *UpdateRecipeTitleRequest, opts ...grpc.CallOption) (*UpdateRecipeTitleResponse, error)
 	UpdateRecipeDescription(ctx context.Context, in *UpdateRecipeDescriptionRequest, opts ...grpc.CallOption) (*UpdateRecipeDescriptionResponse, error)
 	DeleteRecipe(ctx context.Context, in *DeleteRecipeRequest, opts ...grpc.CallOption) (*DeleteRecipeResponse, error)
-	RemoveRecipeFromResource(ctx context.Context, in *RemoveResourceFromRecipeRequest, opts ...grpc.CallOption) (*RemoveRecipeFromResourceResponse, error)
+	RemoveResourceFromRecipe(ctx context.Context, in *RemoveResourceFromRecipeRequest, opts ...grpc.CallOption) (*RemoveRecipeFromResourceResponse, error)
 	AddRecipeResource(ctx context.Context, in *AddRecipeResourceRequest, opts ...grpc.CallOption) (*AddRecipeResourceResponse, error)
 	CreateTag(ctx context.Context, in *CreateTagRequest, opts ...grpc.CallOption) (*CreateTagResponse, error)
 	AddTagToRecipe(ctx context.Context, in *AddTagToRecipeRequest, opts ...grpc.CallOption) (*AddTagToRecipeResponse, error)
@@ -125,9 +125,9 @@ func (c *recipeSvcClient) DeleteRecipe(ctx context.Context, in *DeleteRecipeRequ
 	return out, nil
 }
 
-func (c *recipeSvcClient) RemoveRecipeFromResource(ctx context.Context, in *RemoveResourceFromRecipeRequest, opts ...grpc.CallOption) (*RemoveRecipeFromResourceResponse, error) {
+func (c *recipeSvcClient) RemoveResourceFromRecipe(ctx context.Context, in *RemoveResourceFromRecipeRequest, opts ...grpc.CallOption) (*RemoveRecipeFromResourceResponse, error) {
 	out := new(RemoveRecipeFromResourceResponse)
-	err := c.cc.Invoke(ctx, "/RecipeSvc/RemoveRecipeFromResource", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/RecipeSvc/RemoveResourceFromRecipe", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -185,7 +185,7 @@ type RecipeSvcServer interface {
 	UpdateRecipeTitle(context.Context, *UpdateRecipeTitleRequest) (*UpdateRecipeTitleResponse, error)
 	UpdateRecipeDescription(context.Context, *UpdateRecipeDescriptionRequest) (*UpdateRecipeDescriptionResponse, error)
 	DeleteRecipe(context.Context, *DeleteRecipeRequest) (*DeleteRecipeResponse, error)
-	RemoveRecipeFromResource(context.Context, *RemoveResourceFromRecipeRequest) (*RemoveRecipeFromResourceResponse, error)
+	RemoveResourceFromRecipe(context.Context, *RemoveResourceFromRecipeRequest) (*RemoveRecipeFromResourceResponse, error)
 	AddRecipeResource(context.Context, *AddRecipeResourceRequest) (*AddRecipeResourceResponse, error)
 	CreateTag(context.Context, *CreateTagRequest) (*CreateTagResponse, error)
 	AddTagToRecipe(context.Context, *AddTagToRecipeRequest) (*AddTagToRecipeResponse, error)
@@ -224,8 +224,8 @@ func (UnimplementedRecipeSvcServer) UpdateRecipeDescription(context.Context, *Up
 func (UnimplementedRecipeSvcServer) DeleteRecipe(context.Context, *DeleteRecipeRequest) (*DeleteRecipeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteRecipe not implemented")
 }
-func (UnimplementedRecipeSvcServer) RemoveRecipeFromResource(context.Context, *RemoveResourceFromRecipeRequest) (*RemoveRecipeFromResourceResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RemoveRecipeFromResource not implemented")
+func (UnimplementedRecipeSvcServer) RemoveResourceFromRecipe(context.Context, *RemoveResourceFromRecipeRequest) (*RemoveRecipeFromResourceResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RemoveResourceFromRecipe not implemented")
 }
 func (UnimplementedRecipeSvcServer) AddRecipeResource(context.Context, *AddRecipeResourceRequest) (*AddRecipeResourceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddRecipeResource not implemented")
@@ -414,20 +414,20 @@ func _RecipeSvc_DeleteRecipe_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RecipeSvc_RemoveRecipeFromResource_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _RecipeSvc_RemoveResourceFromRecipe_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RemoveResourceFromRecipeRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RecipeSvcServer).RemoveRecipeFromResource(ctx, in)
+		return srv.(RecipeSvcServer).RemoveResourceFromRecipe(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/RecipeSvc/RemoveRecipeFromResource",
+		FullMethod: "/RecipeSvc/RemoveResourceFromRecipe",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RecipeSvcServer).RemoveRecipeFromResource(ctx, req.(*RemoveResourceFromRecipeRequest))
+		return srv.(RecipeSvcServer).RemoveResourceFromRecipe(ctx, req.(*RemoveResourceFromRecipeRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -548,8 +548,8 @@ var RecipeSvc_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _RecipeSvc_DeleteRecipe_Handler,
 		},
 		{
-			MethodName: "RemoveRecipeFromResource",
-			Handler:    _RecipeSvc_RemoveRecipeFromResource_Handler,
+			MethodName: "RemoveResourceFromRecipe",
+			Handler:    _RecipeSvc_RemoveResourceFromRecipe_Handler,
 		},
 		{
 			MethodName: "AddRecipeResource",

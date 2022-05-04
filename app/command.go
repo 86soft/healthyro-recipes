@@ -19,7 +19,12 @@ type Commands struct {
 }
 
 func NewCommandHandlers(repo core.Store, logger zerolog.Logger) (Commands, error) {
-	createRecipe, err := commands.NewCreateRecipeHandler(repo.CreateRecipe, repo.CreateTags, repo.AddRecipeToTags, logger)
+	createRecipe, err := commands.NewCreateRecipeHandler(
+		repo.CreateRecipe,
+		repo.CreateTags,
+		repo.AddRecipeToTags,
+		logger,
+	)
 	if err != nil {
 		return Commands{}, err
 	}
@@ -27,7 +32,13 @@ func NewCommandHandlers(repo core.Store, logger zerolog.Logger) (Commands, error
 	if err != nil {
 		return Commands{}, err
 	}
-	addTagToRecipe, err := commands.NewAddTagToRecipeHandler(repo.AddTagToRecipe, repo.CreateTag, logger)
+	addTagToRecipe, err := commands.NewAddTagToRecipeHandler(
+		repo.AddTagToRecipe,
+		repo.CreateTag,
+		repo.CheckRecipeForTag,
+		repo.TagExist,
+		logger,
+	)
 	if err != nil {
 		return Commands{}, err
 	}
@@ -51,7 +62,7 @@ func NewCommandHandlers(repo core.Store, logger zerolog.Logger) (Commands, error
 	if err != nil {
 		return Commands{}, err
 	}
-	deleteRecipe, err := commands.NewDeleteRecipeHandler(repo.DeleteRecipe, logger)
+	deleteRecipe, err := commands.NewDeleteRecipeHandler(repo.DeleteRecipe, repo.GetRecipe, logger)
 	if err != nil {
 		return Commands{}, err
 	}

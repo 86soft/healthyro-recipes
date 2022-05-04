@@ -30,5 +30,5 @@ type Resource struct {
 type Tag struct {
 	Document   `bson:",inline"`
 	Name       string   `bson:"_id"`
-	RecipesIDs []string `bson:"recipesIDs"`
+	RecipesIDs []string `bson:"recipesIDs,omitempty"`
 }

@@ -29,16 +29,38 @@ func (m *MongoStorage) CreateRecipe(ctx context.Context, recipe *core.Recipe) er
 		Tags:        dbRecipeTags,
 	}
 
-	dbTags := make([]any, len(dbRecipeTags))
-	mapToTags(createdAt, recipe, recipe.Tags, dbTags)
+	recipeColl := m.ForCollection(CollectionRecipes)
+	tagColl := m.ForCollection(CollectionTags)
 
-	recipesCol := m.ForCollection(CollectionRecipes)
+	inRelatedTags := bson.M{"_id": dbRecipe.Tags}
+	addRecipeID := bson.M{"$push": bson.M{"recipesIDs": dbRecipe.ID}}
 
-	_, errOrNil := recipesCol.InsertOne(ctx, dbRecipe)
-	if errOrNil != nil {
-		return errOrNil
+	update := func(sessCtx mongo.SessionContext) (interface{}, error) {
+		_, err := recipeColl.InsertOne(ctx, dbRecipe)
+		if err != nil {
+			return nil, fmt.Errorf("recipes: InsertOne: %w", err)
+		}
+
+		_, err = tagColl.UpdateMany(ctx, inRelatedTags, addRecipeID)
+		if err != nil {
+			return nil, fmt.Errorf("tag: UpdateMany: %w", err)
+		}
+		return nil, nil
 	}
-	return errOrNil
+
+	session, err := m.client.StartSession()
+	if err != nil {
+		return fmt.Errorf("StartSession: %w", err)
+	}
+
+	defer session.EndSession(ctx)
+
+	_, err = session.WithTransaction(ctx, update)
+	if err != nil {
+		return fmt.Errorf("WithTransaction: %w", err)
+	}
+
+	return nil
 }
 
 func (m *MongoStorage) AddRecipeResource(ctx context.Context, id core.ID[core.Recipe], r *core.Resource) error {
@@ -158,10 +180,46 @@ func (m *MongoStorage) UpdateRecipeDescription(ctx context.Context, id core.ID[c
 	return nil
 }
 
-func (m *MongoStorage) DeleteRecipe(ctx context.Context, id core.ID[core.Recipe]) error {
-	c := m.ForCollection(CollectionRecipes)
-	_, errOrNil := c.DeleteOne(ctx, bson.M{"_id": id.Value.String()}) //maybe soft delete?
-	return errOrNil
+func (m *MongoStorage) DeleteRecipe(ctx context.Context, r *core.Recipe) error {
+	recipeColl := m.ForCollection(CollectionRecipes)
+	tagColl := m.ForCollection(CollectionTags)
+
+	recipeID := r.ID.Value.String()
+
+	updateTagColl := bson.M{"$pull": bson.M{"recipesIDs": recipeID}}
+	tags := make([]string, len(r.Tags))
+	for i := range r.Tags {
+		tags[i] = r.Tags[i].Name
+	}
+
+	filter := bson.M{"_id": bson.M{"$in": tags}}
+
+	update := func(sessCtx mongo.SessionContext) (interface{}, error) {
+		_, err := recipeColl.DeleteOne(ctx, bson.M{"_id": recipeID})
+		if err != nil {
+			return nil, fmt.Errorf("recipe: DeleteOne: %w", err)
+		}
+
+		_, err = tagColl.UpdateMany(ctx, filter, updateTagColl)
+		if err != nil {
+			return nil, fmt.Errorf("tag: UpdateByID: %w", err)
+		}
+		return nil, nil
+	}
+
+	session, err := m.client.StartSession()
+	if err != nil {
+		return fmt.Errorf("StartSession: %w", err)
+	}
+
+	defer session.EndSession(ctx)
+
+	_, err = session.WithTransaction(ctx, update)
+	if err != nil {
+		return fmt.Errorf("WithTransaction: %w", err)
+	}
+
+	return nil
 }
 
 func (m *MongoStorage) RemoveResourceFromRecipe(ctx context.Context, recipeID core.ID[core.Recipe], resourceID core.ID[core.Resource]) error {

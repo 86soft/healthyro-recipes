@@ -5,6 +5,7 @@ import (
 	"fmt"
 	c "github.com/86soft/healthyro-recipes/core"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 	"time"
 )
 
@@ -23,31 +24,70 @@ func (m *MongoStorage) CreateTag(ctx context.Context, name string) (c.ID[c.Tag],
 
 func (m *MongoStorage) AddTagToRecipe(ctx context.Context, recipeID c.ID[c.Recipe], t *c.Tag) error {
 	recipeColl := m.ForCollection(CollectionRecipes)
-
-	update := bson.M{"$push": bson.M{"tags": t.Name}}
-
-	_, err := recipeColl.UpdateByID(ctx, recipeID.Value, update)
-	if err != nil {
-		return fmt.Errorf("recipe: UpdateByID: %w", err)
-	}
-
 	tagColl := m.ForCollection(CollectionTags)
-	update = bson.M{"$push": bson.M{"recipeIds": recipeID.Value}}
-	_, err = tagColl.UpdateByID(ctx, t.Name, update)
-	if err != nil {
-		return fmt.Errorf("tagColl.UpdateByID: %w", err)
+
+	updateRecipe := bson.M{"$push": bson.M{"tags": t.Name}}
+	updateTagColl := bson.M{"$push": bson.M{"recipesIDs": recipeID.Value.String()}}
+
+	update := func(sessCtx mongo.SessionContext) (interface{}, error) {
+		_, err := recipeColl.UpdateByID(sessCtx, recipeID.Value.String(), updateRecipe)
+		if err != nil {
+			return nil, fmt.Errorf("recipe: UpdateByID: %w", err)
+		}
+
+		_, err = tagColl.UpdateByID(ctx, t.Name, updateTagColl)
+		if err != nil {
+			return nil, fmt.Errorf("tag: UpdateByID: %w", err)
+		}
+		return nil, nil
 	}
+
+	session, err := m.client.StartSession()
+	if err != nil {
+		return fmt.Errorf("StartSession: %w", err)
+	}
+
+	defer session.EndSession(ctx)
+
+	_, err = session.WithTransaction(ctx, update)
+	if err != nil {
+		return fmt.Errorf("WithTransaction: %w", err)
+	}
+
 	return nil
 }
 
-func (m *MongoStorage) RemoveTagFromRecipe(ctx context.Context, recipeID c.ID[c.Recipe], tagID c.ID[c.Tag]) error {
+func (m *MongoStorage) RemoveTagFromRecipe(ctx context.Context, recipeID c.ID[c.Recipe], tagName string) error {
 	recipeColl := m.ForCollection(CollectionRecipes)
+	tagColl := m.ForCollection(CollectionTags)
 
-	removeTagFromRecipe := bson.M{"$pull": bson.M{"tags": bson.M{"_id": tagID.Value}}}
-	_, err := recipeColl.UpdateByID(ctx, recipeID.Value, removeTagFromRecipe)
-	if err != nil {
-		return fmt.Errorf("recipeColl.UpdateByID: %w", err)
+	update := func(sessCtx mongo.SessionContext) (interface{}, error) {
+		updateRecipe := bson.M{"$pull": bson.M{"tags": tagName}}
+		_, err := recipeColl.UpdateByID(sessCtx, recipeID.Value.String(), updateRecipe)
+		if err != nil {
+			return nil, fmt.Errorf("recipe: UpdateByID: %w", err)
+		}
+
+		updateTagColl := bson.M{"$pull": bson.M{"recipesIDs": recipeID.Value.String()}}
+		_, err = tagColl.UpdateByID(ctx, tagName, updateTagColl)
+		if err != nil {
+			return nil, fmt.Errorf("tag: UpdateByID: %w", err)
+		}
+		return nil, nil
 	}
+
+	session, err := m.client.StartSession()
+	if err != nil {
+		return fmt.Errorf("StartSession: %w", err)
+	}
+
+	defer session.EndSession(ctx)
+
+	_, err = session.WithTransaction(ctx, update)
+	if err != nil {
+		return fmt.Errorf("WithTransaction: %w", err)
+	}
+
 	return nil
 }
 
@@ -88,4 +128,38 @@ func (m *MongoStorage) AddRecipeToTags(ctx context.Context, recipeID c.ID[c.Reci
 		return fmt.Errorf("recipeColl.UpdateByID: %w", err)
 	}
 	return nil
+}
+
+func (m *MongoStorage) CheckRecipeForTag(ctx context.Context, recipeID c.ID[c.Recipe], tagName string) (bool, error) {
+	tagColl := m.ForCollection(CollectionTags)
+	filter := bson.M{"_id": tagName, "recipesIDs": bson.M{"$all": bson.A{recipeID.Value.String()}}}
+
+	count, err := tagColl.CountDocuments(ctx, filter)
+	if err != nil {
+		return false, fmt.Errorf("CountDocuments: %w", err)
+	}
+
+	if count == 0 {
+		return false, nil
+	}
+	if count > 1 {
+		return false, fmt.Errorf(
+			"invalid tag state, tag:%s | recipeID: %s | recipeID count: %v",
+			tagName,
+			recipeID.Value.String(),
+			count,
+		)
+	}
+	return true, nil
+}
+
+func (m *MongoStorage) TagExist(ctx context.Context, tagName string) (bool, error) {
+	tagColl := m.ForCollection(CollectionTags)
+	filter := bson.M{"_id": tagName}
+	count, err := tagColl.CountDocuments(ctx, filter)
+	if err != nil {
+		return false, fmt.Errorf("CountDocuments: %w", err)
+	}
+
+	return count == 1, nil
 }
