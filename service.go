@@ -23,7 +23,7 @@ import (
 
 const (
 	ServiceName    = "healthyro-recipes"
-	ServiceVersion = "v0.0.1"
+	ServiceVersion = "v0.1.0"
 )
 
 type Empty struct{}
