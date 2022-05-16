@@ -2,42 +2,48 @@ package main
 
 import (
 	"fmt"
-	"log"
+	"github.com/rs/zerolog"
 	"os"
 	"os/signal"
 	"syscall"
 )
 
+var appErrors []error
+
 func main() {
-	err := Start()
-	if err != nil {
-		log.Fatal(err)
+	log := zerolog.New(os.Stdout)
+	Start(log)
+	if len(appErrors) != 0 {
+		for _, err := range appErrors {
+			log.Error().Msg(err.Error())
+		}
+		os.Exit(1)
 	}
 	os.Exit(0)
 }
 
-func Start() error {
-	svc, err := setup()
+func Start(log zerolog.Logger) {
+	svc, err := setup(log)
 	if err != nil {
-		return err
+		appErrors = append(appErrors, fmt.Errorf("setup: %w", err))
+		return
 	}
 
 	exit := make(chan os.Signal, 1)
 	signal.Notify(exit, os.Interrupt, syscall.SIGTERM)
-	errs := svc.Run()
+	result := svc.Run()
 
 	select {
-	case err := <-errs:
+	case err = <-result:
 		if err != nil {
-			err = fmt.Errorf("run: %w", err)
+			appErrors = append(appErrors, fmt.Errorf("run: %w", err))
 		}
 	case <-exit:
 	}
 
 	problems := svc.Stop()
 	if problems != nil {
-		err = fmt.Errorf("problems: %w", problems)
+		appErrors = append(appErrors, fmt.Errorf("problems: %w", problems))
 	}
-	// we lose err info, refactor for err slice
-	return err
+	return
 }

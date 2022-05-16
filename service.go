@@ -41,7 +41,7 @@ type Service struct {
 	logger    zerolog.Logger
 }
 
-func setup() (*Service, error) {
+func setup(logger zerolog.Logger) (*Service, error) {
 	flag.Parse()
 	fetchEnvVariables()
 	err := validateEnvVariables()
@@ -52,6 +52,7 @@ func setup() (*Service, error) {
 	svc, err := newService(
 		WithMongoDBClient(*_dbURL),
 		WithServerURL(*_serviceURL),
+		WithZerolog(logger),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("newService: %w", err)
@@ -96,7 +97,6 @@ func newService(args ...func(*Service) error) (*Service, error) {
 		}
 	}
 
-	svc.logger = zerolog.New(os.Stdout)
 	store := adapters.NewMongoStorage(svc.dbDriver)
 
 	newApp, err := app.NewApplication(store, svc.logger)
@@ -111,7 +111,9 @@ func newService(args ...func(*Service) error) (*Service, error) {
 	server = grpc.NewServer()
 
 	if *_developmentMode {
-		server = grpc.NewServer(grpc.UnaryInterceptor(UnaryLoggingInterceptor(svc.logger)))
+		server = grpc.NewServer(
+			grpc.UnaryInterceptor(UnaryLoggingInterceptor(svc.logger)),
+		)
 	}
 	grpc_health_v1.RegisterHealthServer(server, health.NewServer())
 	reflection.Register(server)
@@ -170,6 +172,17 @@ func UnaryLoggingInterceptor(logger zerolog.Logger) grpc.UnaryServerInterceptor 
 	}
 }
 
+func UnaryFirebaseAuthInterceptor(logger zerolog.Logger) grpc.UnaryServerInterceptor {
+	return func(
+		ctx context.Context,
+		req interface{},
+		info *grpc.UnaryServerInfo,
+		handler grpc.UnaryHandler,
+	) (interface{}, error) {
+		return nil, nil
+	}
+}
+
 func WithMongoDBClient(url string) func(*Service) error {
 	return func(svc *Service) error {
 		if url == "" {
@@ -189,6 +202,13 @@ func WithServerURL(url string) func(*Service) error {
 		var err error
 		svc.serverURL = url
 		return err
+	}
+}
+
+func WithZerolog(log zerolog.Logger) func(*Service) error {
+	return func(svc *Service) error {
+		svc.logger = log
+		return nil
 	}
 }
 
