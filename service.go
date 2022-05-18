@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
+	"firebase.google.com/go/auth"
 	"flag"
 	"fmt"
 	"github.com/86soft/healthyro-recipes/adapters"
@@ -12,9 +14,12 @@ import (
 	"github.com/rs/zerolog"
 	"go.mongodb.org/mongo-driver/mongo"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/health"
 	"google.golang.org/grpc/health/grpc_health_v1"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
+	"google.golang.org/grpc/status"
 	"net"
 	"os"
 	"time"
@@ -30,12 +35,14 @@ type Empty struct{}
 var (
 	_dbURL           = flag.String("conn", "", "database connection string")
 	_serviceURL      = flag.String("url", "", "grpc server url")
+	_firebaseBase64  = flag.String("firebase", "", "firebase secret json, base64 encoded")
 	_developmentMode = flag.Bool("dev", false, "flag for development features")
 )
 
 type Service struct {
 	serverURL string
 	dbDriver  *mongo.Client
+	auth      *auth.Client
 	server    *grpc.Server
 	logger    zerolog.Logger
 }
@@ -52,6 +59,7 @@ func setup(logger zerolog.Logger) (*Service, error) {
 		WithMongoDBClient(*_dbURL),
 		WithServerURL(*_serviceURL),
 		WithZerolog(logger),
+		WithFirebaseClient(*_firebaseBase64),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("newService: %w", err)
@@ -107,11 +115,16 @@ func newService(args ...func(*Service) error) (*Service, error) {
 	a := ports.NewRecipeServer(newApp)
 
 	var server *grpc.Server
-	server = grpc.NewServer()
+	server = grpc.NewServer(
+		grpc.UnaryInterceptor(UnaryFirebaseAuthInterceptor(svc.auth)),
+	)
 
 	if *_developmentMode {
 		server = grpc.NewServer(
-			grpc.UnaryInterceptor(UnaryLoggingInterceptor(svc.logger)),
+			grpc.ChainUnaryInterceptor(
+				UnaryLoggingInterceptor(svc.logger),
+				UnaryFirebaseAuthInterceptor(svc.auth),
+			),
 		)
 	}
 	grpc_health_v1.RegisterHealthServer(server, health.NewServer())
@@ -148,7 +161,6 @@ func (s *Service) Stop() error {
 func UnaryLoggingInterceptor(logger zerolog.Logger) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		start := time.Now().UTC()
-
 		h, err := handler(ctx, req)
 		took := time.Since(start)
 		if err != nil {
@@ -159,14 +171,29 @@ func UnaryLoggingInterceptor(logger zerolog.Logger) grpc.UnaryServerInterceptor 
 	}
 }
 
-func UnaryFirebaseAuthInterceptor(logger zerolog.Logger) grpc.UnaryServerInterceptor {
+func UnaryFirebaseAuthInterceptor(c *auth.Client) grpc.UnaryServerInterceptor {
 	return func(
 		ctx context.Context,
 		req interface{},
 		info *grpc.UnaryServerInfo,
 		handler grpc.UnaryHandler,
 	) (interface{}, error) {
-		return nil, nil
+		md, ok := metadata.FromIncomingContext(ctx)
+		if !ok {
+			return handler, status.Errorf(codes.Unauthenticated, "metadata is missing")
+		}
+
+		payload := md["authorization"]
+		if len(payload) == 0 {
+			return handler, status.Errorf(codes.Unauthenticated, "authorization token is missing")
+		}
+		idToken := payload[0]
+		_, err := c.VerifyIDToken(ctx, idToken)
+		if err != nil {
+			return handler, err
+		}
+		h, err := handler(ctx, req)
+		return h, nil
 	}
 }
 
@@ -177,6 +204,22 @@ func WithMongoDBClient(url string) func(*Service) error {
 		}
 		var err error
 		svc.dbDriver, err = adapters.NewMongoClient(url, 20)
+		return err
+	}
+}
+
+func WithFirebaseClient(data string) func(*Service) error {
+	return func(svc *Service) error {
+		if data == "" {
+			return errors.New("data param is empty")
+		}
+
+		bytes, err := base64.StdEncoding.DecodeString(data)
+		if err != nil {
+			return fmt.Errorf("DecodeString: base64: %w", err)
+		}
+
+		svc.auth, err = adapters.NewFirebaseAuthClient(bytes)
 		return err
 	}
 }
@@ -207,6 +250,9 @@ func fetchEnvVariables() {
 	if *_dbURL == "" {
 		*_dbURL = os.Getenv("URL")
 	}
+	if *_firebaseBase64 == "" {
+		*_firebaseBase64 = os.Getenv("H_FIREBASE")
+	}
 }
 
 func validateEnvVariables() error {
@@ -216,6 +262,10 @@ func validateEnvVariables() error {
 
 	if *_dbURL == "" {
 		return errors.New("_dbURL is empty")
+	}
+
+	if *_firebaseBase64 == "" {
+		return errors.New("_firebaseBase64 is empty")
 	}
 	return nil
 }
